@@ -15,7 +15,7 @@ export const TokenWithChainLogo = ({
   return (
     <Flex align="center" gap={2} position="relative">
       <Image
-        src={token.logo}
+        src={token.logoURI}
         alt={token.name}
         width={width}
         height={height}

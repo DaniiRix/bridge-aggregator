@@ -1,0 +1,43 @@
+export const chainsMap = {
+    ethereum: 1,
+    bsc: 56,
+    polygon: 137,
+    optimism: 10,
+    arbitrum: 42161,
+    avax: 43114,
+    gnosis: 100,
+    fantom: 250,
+    klaytn: 8217,
+    aurora: 1313161554,
+    celo: 42220,
+    cronos: 25,
+    dogechain: 2000,
+    moonriver: 1285,
+    bttc: 199,
+    oasis: 42262,
+    velas: 106,
+    heco: 128,
+    harmony: 1666600000,
+    boba: 288,
+    okexchain: 66,
+    fuse: 122,
+    moonbeam: 1284,
+    canto: 7700,
+    zksync: 324,
+    polygonzkevm: 1101,
+    ontology: 58,
+    kava: 2222,
+    pulse: 369,
+    metis: 1088,
+    base: 8453,
+    linea: 59144,
+    mode: 34443,
+    mantle: 5000,
+    scroll: 534352,
+    sonic: 146,
+    unichain: 130
+} as const;
+
+export const chainIdToName = (chainId: number) => {
+    return Object.entries(chainsMap).find(([, id]) => id === chainId)?.[0];
+};

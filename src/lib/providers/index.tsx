@@ -12,7 +12,7 @@ import { rpcsTransports } from "../rpcs";
 import { themeConfig } from "../theme";
 import { BridgeStoreProvider } from "./bridge-store";
 
-const config = getDefaultConfig({
+export const wagmiConfig = getDefaultConfig({
   appName: "LlamaBridge",
   projectId: "b3d4ba9fb97949ab12267b470a6f31d2",
   chains: allChains as any,
@@ -26,7 +26,7 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
     <ChakraProvider value={createSystem(defaultConfig, themeConfig)}>
       <DarkMode>
-        <WagmiProvider config={config}>
+        <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
             <RainbowKitProvider>
               <BridgeStoreProvider>{children}</BridgeStoreProvider>

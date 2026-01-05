@@ -11,7 +11,7 @@ export const Navbar = () => {
           LlamaBridge
         </Text>
       </Box>
-      <ConnectButton chainStatus="none" />
+      <ConnectButton chainStatus="none" showBalance={false} />
     </Box>
   );
 };

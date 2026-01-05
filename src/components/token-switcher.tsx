@@ -3,6 +3,7 @@
 import {
   Box,
   Button,
+  type ButtonProps,
   Dialog,
   Flex,
   HStack,
@@ -13,29 +14,29 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { CheckCircle2Icon, ChevronDownIcon, SearchIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
-import { zeroAddress } from "viem";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { ChevronDownIcon, Coins, SearchIcon } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { formatUnits } from "viem";
 import { useDebounce } from "@/hooks/use-debounce";
+import {
+  type TokenWithBalance,
+  useTokenBalance,
+} from "@/hooks/use-token-balance";
+import { useTokens } from "@/hooks/use-tokens";
 import { allChains, type WagmiChain } from "@/lib/chains";
 import { useBridge } from "@/lib/providers/bridge-store";
 import type { Token } from "@/store/bridge";
 import { titleCase, truncate, truncateAddress } from "@/utils/string";
 import { TokenWithChainLogo } from "./ui/dual-token";
 
-const tokens = [
-  {
-    chainId: 1,
-    name: "Ethereum",
-    symbol: "ETH",
-    logo: "https://assets.coingecko.com/coins/images/279/small/ethereum.png",
-    address: "0x0000000000000000000000000000000000000000",
-    decimals: 18,
-  },
-];
-
 export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
   const { from, to, setFromChain, setToChain } = useBridge((state) => state);
+
+  const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const selectedChain = useMemo(
     () => (side === "from" ? from.chain : to.chain),
@@ -59,7 +60,13 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
   );
 
   return (
-    <Dialog.Root>
+    <Dialog.Root
+      {...(!!selectedChain && {
+        initialFocusEl: () => inputRef.current,
+      })}
+      open={open}
+      onOpenChange={(e) => setOpen(e.open)}
+    >
       <Dialog.Trigger asChild>
         <Button
           size="lg"
@@ -92,7 +99,7 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                   borderRadius: "100%",
                   backgroundColor: "#565A69",
                 }}
-              ></div>
+              />
               <VStack gap={0} alignItems="flex-start">
                 <Text fontSize="sm" fontWeight="bold">
                   Token
@@ -148,7 +155,36 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                   </VStack>
                 </Box>
 
-                <TokensList side={side} tokens={tokens} />
+                <Box flex={1} display={selectedChain ? "block" : "none"}>
+                  <Text fontSize="lg" fontWeight="semibold" color="white">
+                    Select a token
+                  </Text>
+
+                  <InputGroup
+                    mt={4}
+                    startElement={<SearchIcon size={18} />}
+                    className="dark"
+                    bg="bg.2"
+                    borderRadius="full"
+                    w="100%"
+                  >
+                    <Input
+                      size="sm"
+                      ref={inputRef}
+                      placeholder="Search token"
+                      value={searchTerm}
+                      color="white"
+                      borderRadius="full"
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </InputGroup>
+
+                  <TokensList
+                    searchTerm={searchTerm}
+                    side={side}
+                    closeDialog={() => setOpen(false)}
+                  />
+                </Box>
               </HStack>
             </Dialog.Body>
           </Dialog.Content>
@@ -158,30 +194,189 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
   );
 };
 
+const HEADER_HEIGHT = 24;
+const TOKEN_ROW_HEIGHT = 56;
+const SECTION_GAP = 0;
+const MAX_LIST_HEIGHT = 500;
+
 const TokensList = ({
+  searchTerm,
   side,
-  tokens,
+  closeDialog,
 }: {
+  searchTerm: string;
   side: "from" | "to";
-  tokens: Token[];
+  closeDialog: () => void;
 }) => {
-  const { from, to, setFromToken, setToToken } = useBridge((state) => state);
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const { from, to } = useBridge((state) => state);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  const { data: tokens = [] } = useTokens(
+    side === "from" ? undefined : to.chain?.id,
+  );
+
+  const { data: tokensWithBalances = [] } = useTokenBalance(
+    side === "from" ? from.chain?.id : to.chain?.id,
+  );
 
   const selectedToken = useMemo(
     () => (side === "from" ? from.token : to.token),
     [from.token, to.token, side],
   );
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const filteredTokens = useMemo(() => {
+    if (!debouncedSearchTerm) return tokens;
+    const search = debouncedSearchTerm.toLowerCase();
+    return tokens.filter(
+      (token) =>
+        token.name.toLowerCase().includes(search) ||
+        token.symbol.toLowerCase().includes(search),
+    );
+  }, [tokens, debouncedSearchTerm]);
 
-  const filteredTokens = useMemo(
-    () =>
-      tokens.filter((token) =>
-        token.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()),
-      ),
-    [tokens, debouncedSearchTerm],
+  const filteredTokensWithBalance = useMemo(() => {
+    if (!debouncedSearchTerm) return tokensWithBalances;
+    const search = debouncedSearchTerm.toLowerCase();
+    return tokensWithBalances.filter(
+      (token) =>
+        token.name.toLowerCase().includes(search) ||
+        token.symbol.toLowerCase().includes(search),
+    );
+  }, [tokensWithBalances, debouncedSearchTerm]);
+
+  const tokensWithoutBalance = useMemo(() => {
+    const balanceAddresses = new Set(
+      filteredTokensWithBalance.map((t) => t.address.toLowerCase()),
+    );
+    return filteredTokens.filter(
+      (token) => !balanceAddresses.has(token.address.toLowerCase()),
+    );
+  }, [filteredTokens, filteredTokensWithBalance]);
+
+  const hasBalanceSection = filteredTokensWithBalance.length > 0;
+  const balanceSectionHeight = hasBalanceSection
+    ? HEADER_HEIGHT +
+      SECTION_GAP +
+      filteredTokensWithBalance.length * TOKEN_ROW_HEIGHT
+    : 0;
+
+  const rowVirtualizer = useVirtualizer({
+    count: tokensWithoutBalance.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => TOKEN_ROW_HEIGHT,
+    overscan: 10,
+  });
+
+  const totalHeight = Math.min(
+    balanceSectionHeight +
+      (tokensWithoutBalance.length > 0 ? HEADER_HEIGHT + SECTION_GAP : 0) +
+      rowVirtualizer.getTotalSize(),
+    MAX_LIST_HEIGHT,
   );
+
+  if (filteredTokens.length === 0 && !hasBalanceSection) {
+    return (
+      <Flex
+        w="100%"
+        h={200}
+        align="center"
+        justify="center"
+        gap={2}
+        color="text.2"
+      >
+        <Coins size={24} />
+        <Text fontSize="sm">No tokens found</Text>
+      </Flex>
+    );
+  }
+
+  return (
+    <Box
+      ref={parentRef}
+      mt={4}
+      overflowY="auto"
+      w="100%"
+      h={totalHeight}
+      position="relative"
+    >
+      <VStack gap={0} alignItems="flex-start" w="100%">
+        {hasBalanceSection && (
+          <Box w="100%" mb={SECTION_GAP}>
+            <Text
+              fontSize="xs"
+              fontWeight="semibold"
+              color="text.2"
+              mb={SECTION_GAP / 2}
+            >
+              Your tokens
+            </Text>
+            <VStack gap={1} alignItems="flex-start" w="100%">
+              {filteredTokensWithBalance.map((token) => (
+                <TokenRow
+                  side={side}
+                  selectedTokenAddress={selectedToken?.address}
+                  token={token}
+                  key={`balance-${token.address}`}
+                  closeDialog={closeDialog}
+                />
+              ))}
+            </VStack>
+          </Box>
+        )}
+
+        {tokensWithoutBalance.length > 0 && (
+          <Box w="100%">
+            <Text
+              fontSize="xs"
+              fontWeight="semibold"
+              color="text.2"
+              mb={SECTION_GAP / 2}
+            >
+              All tokens
+            </Text>
+            <Box position="relative" w="100%" h={rowVirtualizer.getTotalSize()}>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const token = tokensWithoutBalance[virtualRow.index];
+                if (!token) return null;
+
+                return (
+                  <TokenRow
+                    side={side}
+                    selectedTokenAddress={selectedToken?.address}
+                    token={token}
+                    key={`token-${token.address}`}
+                    position="absolute"
+                    top={0}
+                    left={0}
+                    width="100%"
+                    transform={`translateY(${virtualRow.start}px)`}
+                    closeDialog={closeDialog}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+        )}
+      </VStack>
+    </Box>
+  );
+};
+
+const TokenRow = ({
+  side,
+  token,
+  selectedTokenAddress,
+  closeDialog,
+  ...props
+}: ButtonProps & {
+  side: "from" | "to";
+  token: TokenWithBalance;
+  selectedTokenAddress?: string;
+  closeDialog: () => void;
+}) => {
+  const { setFromToken, setToToken } = useBridge((state) => state);
 
   const handleTokenSelect = useCallback(
     (token: Token) => {
@@ -190,76 +385,68 @@ const TokensList = ({
       } else {
         setToToken(token);
       }
+      closeDialog();
     },
-    [side, setFromToken, setToToken],
+    [side, setFromToken, setToToken, closeDialog],
   );
 
   return (
-    <Box flex={1}>
-      <Text fontSize="lg" fontWeight="semibold" color="white">
-        Select a token
-      </Text>
-
-      <InputGroup
-        mt={4}
-        startElement={<SearchIcon />}
-        className="dark"
-        bg="bg.2"
+    <Button
+      size="md"
+      variant="plain"
+      color="white"
+      rounded="lg"
+      px={2}
+      py={3}
+      w="100%"
+      h={`${TOKEN_ROW_HEIGHT}px`}
+      bg={selectedTokenAddress === token.address ? "bg.3/70" : "transparent"}
+      justifyContent="flex-start"
+      _hover={{ bg: "bg.3/70" }}
+      onClick={() => handleTokenSelect(token)}
+      {...props}
+    >
+      <Image
+        src={token.logoURI}
+        alt={token.name}
+        width="32px"
+        height="32px"
         borderRadius="full"
-        w="100%"
-      >
-        <Input
-          placeholder="Search token"
-          value={searchTerm}
-          color="white"
-          borderRadius="full"
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </InputGroup>
-      <VStack mt={4} gap={3} alignItems="flex-start">
-        {filteredTokens.map((token) => (
-          <Button
-            key={token.address}
-            size="md"
-            variant="plain"
-            color="white"
-            rounded="lg"
-            px={2}
-            py={6}
-            w="100%"
-            bg={selectedToken?.address === token.address ? "bg.3/70" : "bg.1"}
-            justifyContent="flex-start"
-            _hover={{ bg: "bg.3/70" }}
-            onClick={() => handleTokenSelect(token)}
-          >
-            <Image
-              src={token.logo}
-              alt={token.name}
-              width="32px"
-              height="32px"
-              borderRadius="full"
-              bg="bg.2"
-            />
-            <Flex w="100%" align="center" justify="space-between">
-              <Flex align="flex-start" direction="column">
-                <Text fontSize="sm" letterSpacing="tight">
-                  {token.name}
-                </Text>
-                <Flex align="center" gap={2}>
-                  <Text fontSize="x-small" color="text.2/80" mt={-0.5}>
-                    {titleCase(token.name)}
-                  </Text>
-                  <Text fontSize="x-small" color="text.2/80" mt={-0.5}>
-                    {truncateAddress(zeroAddress)}
-                  </Text>
-                </Flex>
-              </Flex>
+        bg="bg.2"
+      />
+      <Flex w="100%" align="center" justify="space-between" gap={2}>
+        <Flex align="flex-start" direction="column" flex={1} minW={0}>
+          <Text fontSize="sm" letterSpacing="tight" fontWeight="medium">
+            {token.symbol}
+          </Text>
+          <Flex align="center" gap={1}>
+            <Text fontSize="x-small" color="text.2/80" mt={-0.5} maxLines={1}>
+              {truncate(titleCase(token.name), 15)}
+            </Text>
+            <Text fontSize="x-small" color="text.2/50">
+              •
+            </Text>
+            <Text fontSize="x-small" color="text.2/80" mt={-0.5}>
+              {truncateAddress(token.address)}
+            </Text>
+          </Flex>
+        </Flex>
 
-              {selectedToken?.address === token.address && <CheckCircle2Icon />}
+        {!!token?.balanceUSD && (
+          <Flex align="flex-end" direction="column" minW={0}>
+            <Text fontSize="sm" letterSpacing="tight" fontWeight="medium">
+              ${token.balanceUSD}
+            </Text>
+            <Flex align="center" gap={2}>
+              <Text fontSize="x-small" color="text.2/80" mt={-0.5} maxLines={1}>
+                {Number.parseFloat(
+                  formatUnits(BigInt(token.amount ?? 0), token.decimals),
+                ).toFixed(2)}
+              </Text>
             </Flex>
-          </Button>
-        ))}
-      </VStack>
-    </Box>
+          </Flex>
+        )}
+      </Flex>
+    </Button>
   );
 };

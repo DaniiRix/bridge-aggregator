@@ -14,6 +14,8 @@
     "@emotion/react": "^11.14.0",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@tanstack/react-query": "^5.90.16",
+    "@tanstack/react-virtual": "^3.13.16",
+    "decimal.js-light": "^2.5.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
