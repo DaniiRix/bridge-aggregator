@@ -27,7 +27,7 @@ enum STATES {
   ROUTES,
 }
 
-export default function BridgeAggregator() {
+export default function BridgeAggregatorPage() {
   const switchPrivacyId = useId();
 
   const { isPrivacyEnabled, from, togglePrivacy, setFromAmount } = useBridge(

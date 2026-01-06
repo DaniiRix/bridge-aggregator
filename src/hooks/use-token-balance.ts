@@ -3,7 +3,7 @@ import Decimal from "decimal.js-light";
 import { type Address, erc20Abi, zeroAddress } from "viem";
 import { useConnection } from "wagmi";
 import { getBalance, readContract } from "wagmi/actions";
-import { fetchBalancesAndPrices } from "@/app/token";
+import { fetchBalancesAndPrices } from "@/lib/actions/token";
 import { chainIdToName } from "@/lib/constants/chains";
 import { wrappedTokensByChain } from "@/lib/constants/tokens";
 import { wagmiConfig } from "@/lib/providers";
