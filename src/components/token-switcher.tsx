@@ -6,16 +6,21 @@ import {
   type ButtonProps,
   Dialog,
   Flex,
+  Grid,
+  GridItem,
   HStack,
+  IconButton,
   Image,
   Input,
   InputGroup,
   Portal,
+  Skeleton,
+  SkeletonCircle,
   Text,
   VStack,
 } from "@chakra-ui/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronDownIcon, Coins, SearchIcon } from "lucide-react";
+import { ChevronDownIcon, Coins, SearchIcon, XIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -29,6 +34,10 @@ import { useBridge } from "@/lib/providers/bridge-store";
 import type { Token } from "@/store/bridge";
 import { titleCase, truncate, truncateAddress } from "@/utils/string";
 import { TokenWithChainLogo } from "./ui/dual-token";
+
+const HEADER_HEIGHT = 24;
+const TOKEN_ROW_HEIGHT = 56;
+const MAX_LIST_HEIGHT = 500;
 
 export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
   const { from, to, setFromChain, setToChain } = useBridge((state) => state);
@@ -64,6 +73,7 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
       {...(!!selectedChain && {
         initialFocusEl: () => inputRef.current,
       })}
+      size={selectedChain ? "lg" : "xs"}
       open={open}
       onOpenChange={(e) => setOpen(e.open)}
     >
@@ -116,76 +126,113 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
-          <Dialog.Content>
-            <Dialog.Body bg="bg.1" p={4} border="1px solid" borderColor="bg.3">
-              <HStack gap={10} alignItems="flex-start">
-                <Box>
-                  <Text fontSize="lg" fontWeight="semibold" color="white">
-                    Select a network
-                  </Text>
-
-                  <VStack mt={4} gap={2} alignItems="flex-start">
-                    {allChains.map((chain) => (
-                      <Button
-                        key={chain.id}
-                        size="sm"
-                        variant="plain"
-                        color="white"
-                        rounded="lg"
-                        bg={selectedChain?.id === chain.id ? "bg.3/70" : "bg.1"}
-                        p={2}
-                        gap={2}
-                        w="100%"
-                        justifyContent="flex-start"
-                        _hover={{ bg: "bg.3/70" }}
-                        onClick={() => handleChainSelect(chain)}
-                      >
-                        <Image
-                          src={chain.iconUrl}
-                          alt={chain.name}
-                          width="24px"
-                          height="24px"
-                          borderRadius="full"
-                        />
-                        <Text fontSize="sm" letterSpacing="tight">
-                          {chain.name}
-                        </Text>
-                      </Button>
-                    ))}
-                  </VStack>
-                </Box>
-
-                <Box flex={1} display={selectedChain ? "block" : "none"}>
-                  <Text fontSize="lg" fontWeight="semibold" color="white">
-                    Select a token
-                  </Text>
-
-                  <InputGroup
-                    mt={4}
-                    startElement={<SearchIcon size={18} />}
-                    className="dark"
-                    bg="bg.2"
-                    borderRadius="full"
-                    w="100%"
+          <Dialog.Content bg="transparent">
+            <Dialog.Body>
+              <Grid
+                gap={2}
+                display="grid"
+                templateColumns={`repeat(${selectedChain ? "3" : "1"}, 1fr)`}
+              >
+                <GridItem colSpan={1}>
+                  <Box
+                    bg="bg.1"
+                    p={4}
+                    border="1px solid"
+                    borderColor="bg.3"
+                    minW={selectedChain ? "unset" : "300px"}
+                    borderRadius="lg"
                   >
-                    <Input
-                      size="sm"
-                      ref={inputRef}
-                      placeholder="Search token"
-                      value={searchTerm}
-                      color="white"
-                      borderRadius="full"
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </InputGroup>
+                    <Text fontSize="lg" fontWeight="semibold" color="white">
+                      Select network
+                    </Text>
 
-                  <TokensList
-                    searchTerm={searchTerm}
-                    side={side}
-                    closeDialog={() => setOpen(false)}
-                  />
-                </Box>
-              </HStack>
+                    <VStack mt={4} gap={2} alignItems="flex-start">
+                      {allChains.map((chain) => (
+                        <Button
+                          key={chain.id}
+                          size="sm"
+                          variant="plain"
+                          color="white"
+                          rounded="lg"
+                          bg={
+                            selectedChain?.id === chain.id ? "bg.3/70" : "bg.1"
+                          }
+                          p={2}
+                          gap={2}
+                          w="100%"
+                          justifyContent="flex-start"
+                          _hover={{ bg: "bg.3/70" }}
+                          onClick={() => handleChainSelect(chain)}
+                        >
+                          <Image
+                            src={chain.iconUrl}
+                            alt={chain.name}
+                            width="24px"
+                            height="24px"
+                            borderRadius="full"
+                          />
+                          <Text fontSize="sm" letterSpacing="tight">
+                            {chain.name}
+                          </Text>
+                        </Button>
+                      ))}
+                    </VStack>
+                  </Box>
+                </GridItem>
+
+                {selectedChain && (
+                  <GridItem colSpan={2}>
+                    <Box
+                      bg="bg.1"
+                      p={4}
+                      border="1px solid"
+                      borderColor="bg.3"
+                      rounded="lg"
+                    >
+                      <Flex justify="space-between" align="center">
+                        <Text fontSize="lg" fontWeight="semibold" color="white">
+                          Select a token
+                        </Text>
+
+                        <IconButton
+                          variant="ghost"
+                          onClick={() => setOpen(false)}
+                          bg="bg.1"
+                          _hover={{ bg: "bg.1" }}
+                          size="sm"
+                        >
+                          <XIcon color="white" />
+                        </IconButton>
+                      </Flex>
+
+                      <InputGroup
+                        mt={4}
+                        startElement={<SearchIcon size={18} />}
+                        className="dark"
+                        bg="bg.2"
+                        borderRadius="full"
+                        w="100%"
+                      >
+                        <Input
+                          size="sm"
+                          ref={inputRef}
+                          placeholder="Search token"
+                          value={searchTerm}
+                          color="white"
+                          borderRadius="full"
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </InputGroup>
+
+                      <TokensList
+                        searchTerm={searchTerm}
+                        side={side}
+                        closeDialog={() => setOpen(false)}
+                      />
+                    </Box>
+                  </GridItem>
+                )}
+              </Grid>
             </Dialog.Body>
           </Dialog.Content>
         </Dialog.Positioner>
@@ -193,11 +240,6 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
     </Dialog.Root>
   );
 };
-
-const HEADER_HEIGHT = 24;
-const TOKEN_ROW_HEIGHT = 56;
-const SECTION_GAP = 0;
-const MAX_LIST_HEIGHT = 500;
 
 const TokensList = ({
   searchTerm,
@@ -213,13 +255,12 @@ const TokensList = ({
   const { from, to } = useBridge((state) => state);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: tokens = [] } = useTokens(
+  const { data: tokens = [], isLoading: isTokenLoading } = useTokens(
     side === "from" ? undefined : to.chain?.id,
   );
 
-  const { data: tokensWithBalances = [] } = useTokenBalance(
-    side === "from" ? from.chain?.id : to.chain?.id,
-  );
+  const { data: tokensWithBalances = [], isLoading: isTokenBalanceLoading } =
+    useTokenBalance(side === "from" ? from.chain?.id : to.chain?.id);
 
   const selectedToken = useMemo(
     () => (side === "from" ? from.token : to.token),
@@ -257,9 +298,7 @@ const TokensList = ({
 
   const hasBalanceSection = filteredTokensWithBalance.length > 0;
   const balanceSectionHeight = hasBalanceSection
-    ? HEADER_HEIGHT +
-      SECTION_GAP +
-      filteredTokensWithBalance.length * TOKEN_ROW_HEIGHT
+    ? HEADER_HEIGHT + filteredTokensWithBalance.length * TOKEN_ROW_HEIGHT
     : 0;
 
   const rowVirtualizer = useVirtualizer({
@@ -271,10 +310,14 @@ const TokensList = ({
 
   const totalHeight = Math.min(
     balanceSectionHeight +
-      (tokensWithoutBalance.length > 0 ? HEADER_HEIGHT + SECTION_GAP : 0) +
+      (tokensWithoutBalance.length > 0 ? HEADER_HEIGHT : 0) +
       rowVirtualizer.getTotalSize(),
     MAX_LIST_HEIGHT,
   );
+
+  if (isTokenLoading || isTokenBalanceLoading) {
+    return <TokensSkeleton />;
+  }
 
   if (filteredTokens.length === 0 && !hasBalanceSection) {
     return (
@@ -303,13 +346,8 @@ const TokensList = ({
     >
       <VStack gap={0} alignItems="flex-start" w="100%">
         {hasBalanceSection && (
-          <Box w="100%" mb={SECTION_GAP}>
-            <Text
-              fontSize="xs"
-              fontWeight="semibold"
-              color="text.2"
-              mb={SECTION_GAP / 2}
-            >
+          <Box w="100%">
+            <Text fontSize="xs" fontWeight="semibold" color="text.2">
               Your tokens
             </Text>
             <VStack gap={1} alignItems="flex-start" w="100%">
@@ -328,12 +366,7 @@ const TokensList = ({
 
         {tokensWithoutBalance.length > 0 && (
           <Box w="100%">
-            <Text
-              fontSize="xs"
-              fontWeight="semibold"
-              color="text.2"
-              mb={SECTION_GAP / 2}
-            >
+            <Text fontSize="xs" fontWeight="semibold" color="text.2">
               All tokens
             </Text>
             <Box position="relative" w="100%" h={rowVirtualizer.getTotalSize()}>
@@ -363,6 +396,59 @@ const TokensList = ({
     </Box>
   );
 };
+
+const TokensSkeleton = () => (
+  <Box mt={4} overflowY="auto" w="100%" position="relative">
+    <Box w="100%">
+      <Text fontSize="xs" fontWeight="semibold" color="text.2">
+        Your tokens
+      </Text>
+      <VStack gap={1} alignItems="flex-start" w="100%">
+        {[...Array(2)].map((val) => (
+          <HStack
+            key={val}
+            gap="3"
+            w="100%"
+            justifyContent="space-between"
+            p={3}
+          >
+            <SkeletonCircle size="8" />
+            <Flex direction="column" alignItems="flex-start" gap="2" w="100%">
+              <Skeleton height="3" width="30%" />
+              <Skeleton height="3" width="90%" />
+            </Flex>
+            <Flex direction="column" alignItems="flex-end" gap="2" w="100%">
+              <Skeleton height="3" width="30%" />
+              <Skeleton height="3" width="20%" />
+            </Flex>
+          </HStack>
+        ))}
+      </VStack>
+    </Box>
+    <Box w="100%">
+      <Text fontSize="xs" fontWeight="semibold" color="text.2">
+        All tokens
+      </Text>
+      <VStack gap={1} alignItems="flex-start" w="100%">
+        {[...Array(3)].map((val) => (
+          <HStack
+            key={val}
+            gap="3"
+            w="100%"
+            justifyContent="space-between"
+            p={3}
+          >
+            <SkeletonCircle size="8" />
+            <Flex direction="column" alignItems="flex-start" gap="2" w="100%">
+              <Skeleton height="3" width="20%" />
+              <Skeleton height="3" width="50%" />
+            </Flex>
+          </HStack>
+        ))}
+      </VStack>
+    </Box>
+  </Box>
+);
 
 const TokenRow = ({
   side,
@@ -420,13 +506,24 @@ const TokenRow = ({
             {token.symbol}
           </Text>
           <Flex align="center" gap={1}>
-            <Text fontSize="x-small" color="text.2/80" mt={-0.5} maxLines={1}>
+            <Text
+              fontSize="xs"
+              letterSpacing="tight"
+              color="text.2/80"
+              mt={-0.5}
+              maxLines={1}
+            >
               {truncate(titleCase(token.name), 15)}
             </Text>
-            <Text fontSize="x-small" color="text.2/50">
+            <Text fontSize="xs" color="text.2/50">
               •
             </Text>
-            <Text fontSize="x-small" color="text.2/80" mt={-0.5}>
+            <Text
+              fontSize="xs"
+              letterSpacing="tight"
+              color="text.2/80"
+              mt={-0.5}
+            >
               {truncateAddress(token.address)}
             </Text>
           </Flex>
@@ -438,7 +535,13 @@ const TokenRow = ({
               ${token.balanceUSD}
             </Text>
             <Flex align="center" gap={2}>
-              <Text fontSize="x-small" color="text.2/80" mt={-0.5} maxLines={1}>
+              <Text
+                fontSize="xs"
+                letterSpacing="tight"
+                color="text.2/80"
+                mt={-0.5}
+                maxLines={1}
+              >
                 {Number.parseFloat(
                   formatUnits(BigInt(token.amount ?? 0), token.decimals),
                 ).toFixed(2)}

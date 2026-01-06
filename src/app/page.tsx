@@ -6,7 +6,6 @@ import {
   Container,
   Flex,
   HStack,
-  IconButton,
   Input,
   Link,
   Spacer,
@@ -14,12 +13,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import {
-  ArrowDownIcon,
-  ArrowLeftIcon,
-  CheckCircle2Icon,
-  ExternalLinkIcon,
-} from "lucide-react";
+import { CheckCircle2Icon, ExternalLinkIcon, InfoIcon } from "lucide-react";
 import { useCallback, useId, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import { AggIcons, LlamaIcon } from "@/components/icons";
@@ -129,7 +123,7 @@ export default function BridgeAggregator() {
               </Tooltip>
             </Flex>
 
-            <Box position="relative">
+            <Box>
               <VStack gap={2}>
                 <Box
                   w="100%"
@@ -186,23 +180,6 @@ export default function BridgeAggregator() {
                   </Button>
                 </Box>
 
-                <IconButton
-                  aria-label="Switch Tokens"
-                  size="sm"
-                  borderRadius="lg"
-                  border="4px solid"
-                  borderColor="gray.800"
-                  bg="bg.3"
-                  _hover={{ bg: "gray.300" }}
-                  position="absolute"
-                  top="50%"
-                  left="50%"
-                  transform="translate(-50%, -50%)"
-                  zIndex={1}
-                >
-                  <ArrowDownIcon color="white" />
-                </IconButton>
-
                 <Box
                   w="100%"
                   bg="bg.input"
@@ -245,8 +222,19 @@ export default function BridgeAggregator() {
             {warnings?.length > 0 && (
               <VStack gap={2} display={{ base: "none", md: "flex" }}>
                 {warnings.map((warning) => (
-                  <Box key={warning} w="100%">
-                    {warning}
+                  <Box
+                    key={warning}
+                    w="100%"
+                    bg="yellow.200/10"
+                    p={2}
+                    borderRadius="lg"
+                  >
+                    <Flex align="center" gap={2}>
+                      <InfoIcon color="#ECC94B" size={16} />
+                      <Text fontSize="xs" color="yellow.400">
+                        {warning}
+                      </Text>
+                    </Flex>
                   </Box>
                 ))}
               </VStack>
