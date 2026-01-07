@@ -6,6 +6,7 @@ import {
   Container,
   Flex,
   HStack,
+  Image,
   Input,
   Link,
   Spacer,
@@ -13,42 +14,76 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import Decimal from "decimal.js-light";
 import { CheckCircle2Icon, ExternalLinkIcon, InfoIcon } from "lucide-react";
-import { useCallback, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { formatUnits } from "viem";
+import { useConnection } from "wagmi";
 import { AggIcons, LlamaIcon } from "@/components/icons";
+import { QuoteSkeleton } from "@/components/skeleton/quote";
 import { TokenSwitcher } from "@/components/token-switcher";
+import { TokenWithChainLogo } from "@/components/ui/dual-token";
+import { useQuote } from "@/hooks/use-quote";
+import { useTokenBalance } from "@/hooks/use-token-balance";
+import { useTokenPrice } from "@/hooks/use-token-price";
 import { useBridge } from "@/lib/providers/bridge-store";
 import { isInputGreaterThanDecimals } from "@/utils/number";
 import { Tooltip } from "../components/ui/tooltip";
 
-enum STATES {
-  INPUT,
-  ROUTES,
-}
-
 export default function BridgeAggregatorPage() {
+  const { address } = useConnection();
+  const { openConnectModal } = useConnectModal();
+
   const switchPrivacyId = useId();
 
-  const { isPrivacyEnabled, from, togglePrivacy, setFromAmount } = useBridge(
-    (state) => state,
-  );
+  const {
+    isPrivacyEnabled,
+    from,
+    to,
+    togglePrivacy,
+    setFromAmount,
+    setToAmount,
+  } = useBridge((state) => state);
 
-  const [uiState, setUiState] = useState(STATES.INPUT);
+  const { data: tokensWithBalance } = useTokenBalance(from.chain?.id);
+
+  const { data: toTokenPrice } = useTokenPrice(to.token);
+  const { quotes, isLoading: areQuotesLoading, warnings } = useQuote();
+
   const [aggregator, setAggregator] = useState("");
-  const [selectedChain, setSelectedChain] = useState(null);
 
   const routesRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const userTokensBalance = useMemo(
+    () => ({
+      from:
+        tokensWithBalance?.find((t) => t.address === from.token?.address)
+          ?.amount ?? "0",
+      to:
+        tokensWithBalance?.find((t) => t.address === from.token?.address)
+          ?.amount ?? "0",
+    }),
+    [tokensWithBalance, from.token?.address],
+  );
 
-  const normalizedRoutes = [
-    // {
-    //   name: "CowSwap",
-    //   amount: 10,
-    // },
-  ];
-  const warnings: string[] = [];
-  const tokenBalance = 0;
+  useEffect(() => {
+    if (!!to.token && quotes?.length > 0) {
+      setToAmount(
+        formatUnits(
+          BigInt(quotes[0].estimatedAmount),
+          to.token.decimals,
+        ).toString(),
+      );
+    }
+  }, [to.token, quotes, setToAmount]);
 
   const handleInputChange = useCallback(
     (value: string) => {
@@ -64,10 +99,129 @@ export default function BridgeAggregatorPage() {
   );
 
   const handleMaxClick = useCallback(() => {
-    if (from.token && tokenBalance) {
-      setFromAmount(formatUnits(tokenBalance, from.token.decimals).toString());
+    if (from.token && userTokensBalance.from) {
+      setFromAmount(
+        formatUnits(
+          BigInt(userTokensBalance.from),
+          from.token.decimals,
+        ).toString(),
+      );
     }
-  }, [from.token, tokenBalance, setFromAmount]);
+  }, [from.token, userTokensBalance.from, setFromAmount]);
+
+  const handleBridge = useCallback(() => {
+    console.log("handle bridge");
+  }, []);
+
+  const renderQuotes = () => {
+    if (areQuotesLoading) {
+      return (
+        <VStack gap={2}>
+          <Text fontSize="lg" fontWeight="semibold" color="white" w="100%">
+            Select a route
+          </Text>
+          <Text fontSize="sm" color="gray.400/80" w="100%">
+            Best route is selected based on net output after gas fees.
+          </Text>
+          <QuoteSkeleton />
+          <QuoteSkeleton />
+          <QuoteSkeleton />
+          <QuoteSkeleton />
+          <QuoteSkeleton />
+        </VStack>
+      );
+    }
+
+    if (!quotes || quotes?.length === 0) {
+      return <RouteNotSelected />;
+    }
+
+    return (
+      <VStack gap={2}>
+        <Text fontSize="lg" fontWeight="semibold" color="white" w="100%">
+          Select a route
+        </Text>
+        <Text fontSize="sm" color="gray.400/80" w="100%">
+          Best route is selected based on net output after gas fees.
+        </Text>
+
+        {quotes?.map((q, qIdx) => (
+          <Box
+            key={q.adapter.name}
+            w="100%"
+            p={4}
+            bg="bg.2"
+            borderRadius="lg"
+            border="2px solid"
+            borderColor={
+              aggregator === q.adapter.name ? "blue.500" : "transparent"
+            }
+            cursor="pointer"
+            _hover={{ borderColor: "gray.600" }}
+            onClick={() => setAggregator(q.adapter.name)}
+          >
+            <Flex justify="space-between" align="center">
+              <Flex align="center" gap={2}>
+                <TokenWithChainLogo token={to.token!} chain={to.chain!} />
+                <Flex direction="column">
+                  <Text
+                    fontSize="lg"
+                    color="gray.200"
+                    fontWeight="semibold"
+                    display="flex"
+                    gap={2}
+                  >
+                    {Number.parseFloat(
+                      formatUnits(
+                        BigInt(q.estimatedAmount),
+                        to.token!.decimals,
+                      ),
+                    ).toFixed(to.token!.decimals / 2)}{" "}
+                    <Text color="gray.400">{to.token!.symbol}</Text>
+                  </Text>
+                  <Text fontSize="sm" color="gray.400">
+                    ≈ $
+                    {new Decimal(toTokenPrice ?? "0")
+                      .mul(
+                        formatUnits(
+                          BigInt(q.estimatedAmount),
+                          to.token!.decimals,
+                        ),
+                      )
+                      .sub(q.estimatedFee)
+                      .toFixed(2)}{" "}
+                    after gas fees
+                  </Text>
+                </Flex>
+              </Flex>
+
+              <Flex direction="column" gap={2} align="flex-end">
+                <Text fontWeight="medium" fontSize="sm">
+                  {qIdx === 0 ? "BEST" : qIdx}
+                </Text>
+                <Flex
+                  fontWeight="medium"
+                  display="flex"
+                  fontSize="sm"
+                  gap={1.5}
+                  alignItems="center"
+                >
+                  <Text color="gray.400">via</Text>
+                  <Image
+                    src={q.adapter.logo}
+                    alt={q.adapter.name}
+                    width="16px"
+                    height="16px"
+                  />
+                  <Text> {q.adapter.name}</Text>
+                </Flex>
+              </Flex>
+            </Flex>
+          </Box>
+        ))}
+      </VStack>
+    );
+  };
 
   return (
     <Container
@@ -83,6 +237,7 @@ export default function BridgeAggregatorPage() {
         justify="center"
         align={{ base: "stretch", lg: "flex-start" }}
         w="100%"
+        position="relative"
       >
         <Box
           w="100%"
@@ -176,7 +331,15 @@ export default function BridgeAggregatorPage() {
                     height="fit-content"
                     onClick={handleMaxClick}
                   >
-                    Balance: --
+                    Balance:{" "}
+                    {from.token
+                      ? Number.parseFloat(
+                          formatUnits(
+                            BigInt(userTokensBalance.from),
+                            from.token.decimals,
+                          ),
+                        ).toFixed(2)
+                      : "-"}
                   </Button>
                 </Box>
 
@@ -209,11 +372,20 @@ export default function BridgeAggregatorPage() {
                       disabled
                       p={0}
                       my={4}
+                      value={to.amount}
                     />
                     <TokenSwitcher side="to" />
                   </Flex>
                   <Text fontSize="xs" color="gray.400">
-                    Balance: --
+                    Balance:{" "}
+                    {to.token
+                      ? Number.parseFloat(
+                          formatUnits(
+                            BigInt(userTokensBalance.to),
+                            to.token.decimals,
+                          ),
+                        ).toFixed(2)
+                      : "-"}
                   </Text>
                 </Box>
               </VStack>
@@ -240,14 +412,33 @@ export default function BridgeAggregatorPage() {
               </VStack>
             )}
 
-            <Button
-              colorPalette="blue"
-              size="lg"
-              w="100%"
-              disabled={!selectedChain}
-            >
-              Connect Wallet
-            </Button>
+            {address ? (
+              <Button
+                colorPalette="blue"
+                size="lg"
+                w="100%"
+                disabled={
+                  !from.chain ||
+                  !from.token ||
+                  !from.amount ||
+                  !to.chain ||
+                  !to.token ||
+                  !to.amount
+                }
+                onClick={handleBridge}
+              >
+                Bridge
+              </Button>
+            ) : (
+              <Button
+                colorPalette="blue"
+                size="lg"
+                w="100%"
+                onClick={openConnectModal}
+              >
+                Connect Wallet
+              </Button>
+            )}
           </VStack>
         </Box>
 
@@ -261,10 +452,6 @@ export default function BridgeAggregatorPage() {
           borderColor="gray.700"
           p={4}
           boxShadow={{ base: "none", md: "dark-lg" }}
-          display={{
-            base: uiState === STATES.ROUTES ? "block" : "none",
-            md: "block",
-          }}
           position={{ base: "absolute", md: "relative" }}
           top={{ base: 0, md: "auto" }}
           left={{ base: 0, md: "auto" }}
@@ -276,35 +463,7 @@ export default function BridgeAggregatorPage() {
           ref={routesRef}
         >
           <VStack gap={4} align="stretch">
-            {!normalizedRoutes || normalizedRoutes?.length === 0 ? (
-              <RouteNotSelected />
-            ) : (
-              <VStack gap={2}>
-                {normalizedRoutes?.map((route) => (
-                  <Box
-                    key={route.name}
-                    w="100%"
-                    p={4}
-                    bg="gray.700"
-                    borderRadius="lg"
-                    border="2px solid"
-                    borderColor={
-                      aggregator === route.name ? "blue.500" : "transparent"
-                    }
-                    cursor="pointer"
-                    _hover={{ borderColor: "gray.600" }}
-                    onClick={() => setAggregator(route.name)}
-                  >
-                    <Flex justify="space-between" align="center">
-                      <Text fontWeight="medium">{route.name}</Text>
-                      <Text fontSize="sm" color="gray.400">
-                        {route.amount}
-                      </Text>
-                    </Flex>
-                  </Box>
-                ))}
-              </VStack>
-            )}
+            {renderQuotes()}
           </VStack>
         </Box>
       </Flex>

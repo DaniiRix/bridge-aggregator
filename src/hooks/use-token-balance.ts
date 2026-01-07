@@ -67,7 +67,7 @@ async function getBalances(
     const [{ balances, prices }, gasBalance, wrappedTokenBalance] =
       await Promise.all([
         fetchBalancesAndPrices(chainId, address),
-        getBalance(wagmiConfig, { address, chainId }),
+        getBalance(wagmiConfig, { address, chainId }).catch(() => null),
         wrappedToken
           ? readContract(wagmiConfig, {
               address: wrappedToken,
@@ -75,7 +75,7 @@ async function getBalances(
               functionName: "balanceOf",
               args: [address],
               chainId,
-            })
+            }).catch(() => null)
           : Promise.resolve(null),
       ]);
 

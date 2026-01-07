@@ -10,7 +10,7 @@ export interface QuoteRequest {
 }
 
 export interface Quote {
-  adapterName: string;
+  adapter: { name: string; logo: string };
   tokenApprovalAddress?: Hex;
   estimatedFee: string;
   estimatedTime: number;
@@ -18,16 +18,15 @@ export interface Quote {
   rawQuote: any;
 }
 
-export interface QuoteResult {
-  adapter: string;
-  quote?: Quote;
-  error?: Error;
-}
-
 export abstract class BaseAdapter {
-  constructor(public readonly name: string) {}
+  constructor(
+    public readonly name: string,
+    public readonly logo: string,
+  ) {}
 
   abstract getQuote(request: QuoteRequest): Promise<Quote>;
 
   abstract bridge(request: QuoteRequest, quote: Quote): Promise<string>;
+
+  supportsRoute?(request: QuoteRequest): Promise<boolean>;
 }

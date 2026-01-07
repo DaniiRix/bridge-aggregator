@@ -12,7 +12,7 @@ export class AcrossAdapter extends BaseAdapter {
   integratorId = ""; // @todo: add integrator id
 
   constructor() {
-    super("across");
+    super("across", "https://icons.llamao.fi/icons/protocols/across?w=48&q=75");
   }
 
   async getSupportedChainsAndTokens(): Promise<ChainAndToken[]> {
@@ -49,7 +49,7 @@ export class AcrossAdapter extends BaseAdapter {
     url.searchParams.set("destinationChainId", dstChainId.toString());
     url.searchParams.set("depositor", sender);
 
-    const res = await fetch(url);
+    const res = await fetch(url.toString());
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(
@@ -65,7 +65,7 @@ export class AcrossAdapter extends BaseAdapter {
     }
 
     return {
-      adapterName: this.name,
+      adapter: { name: this.name, logo: this.logo },
       tokenApprovalAddress: approval?.to,
       estimatedFee: data.fees?.total?.amountUsd || "0",
       estimatedTime: data.expectedFillTime || 0,

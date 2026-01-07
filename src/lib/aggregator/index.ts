@@ -1,9 +1,4 @@
-import type {
-  BaseAdapter,
-  Quote,
-  QuoteRequest,
-  QuoteResult,
-} from "./adapters/base";
+import type { BaseAdapter, Quote, QuoteRequest } from "./adapters/base";
 
 export interface AggregatorConfig {
   timeout?: number;
@@ -23,25 +18,22 @@ export class BridgeAggregator {
     };
   }
 
-  async getQuotes(request: QuoteRequest): Promise<QuoteResult[]> {
+  async getQuotes(request: QuoteRequest): Promise<Quote[]> {
     const quotePromises = Array.from(this.adapters.values()).map((adapter) =>
       this.getQuote(adapter, request),
     );
 
     const results = await Promise.allSettled(quotePromises);
-    const quotes: QuoteResult[] = [];
+    const quotes: Quote[] = [];
 
     for (const result of results) {
       if (result.status === "fulfilled" && !result.value.error) {
-        quotes.push(result.value);
+        quotes.push(result.value.quote);
       }
     }
 
     return quotes.sort((a, b) =>
-      BigInt(a.quote?.estimatedAmount || 0) >
-      BigInt(b.quote?.estimatedAmount || 0)
-        ? 1
-        : -1,
+      BigInt(a.estimatedAmount || 0) > BigInt(b.estimatedAmount || 0) ? 1 : -1,
     );
   }
 
@@ -61,7 +53,9 @@ export class BridgeAggregator {
   private async getQuote(
     adapter: BaseAdapter,
     request: QuoteRequest,
-  ): Promise<QuoteResult> {
+  ): Promise<
+    { quote: Quote; error?: never } | { quote?: never; error: Error }
+  > {
     try {
       if (adapter.supportsRoute) {
         const supported = await this.withTimeout(
@@ -71,7 +65,6 @@ export class BridgeAggregator {
 
         if (!supported) {
           return {
-            adapter: adapter.name,
             error: new Error("Route not supported"),
           };
         }
@@ -82,13 +75,9 @@ export class BridgeAggregator {
         this.config.timeout,
       );
 
-      return {
-        adapter: adapter.name,
-        quote,
-      };
+      return { quote };
     } catch (error) {
       return {
-        adapter: adapter.name,
         error: error instanceof Error ? error : new Error(String(error)),
       };
     }

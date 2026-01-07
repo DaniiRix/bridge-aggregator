@@ -26,7 +26,7 @@ const PRICE_BATCH_SIZE = 100;
 const API_KEY =
   "_RqMaPV5)37j3HUOp41RbJrqOoq4wi6eB_J64fjiLrsKL?hhe_h_r0wh7fgEOh_d";
 
-async function fetchPrices(
+export async function fetchPrices(
   tokens: string[],
 ): Promise<Record<string, PriceData>> {
   if (tokens.length === 0) return {};
