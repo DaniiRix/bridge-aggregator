@@ -25,12 +25,12 @@ export const useQuote = () => {
     queryKey: ["quotes", from, to, debouncedAmount],
     queryFn: () => getQuotes(address, from, to, debouncedAmount),
     enabled: Boolean(
-      !!address &&
-        !!from.chain &&
-        !!from.token &&
-        !!to.chain &&
-        !!to.token &&
-        !!debouncedAmount,
+      address &&
+        from.chain &&
+        from.token &&
+        to.chain &&
+        to.token &&
+        debouncedAmount,
     ),
     staleTime: STALE_TIME_MS,
     refetchInterval: STALE_TIME_MS,

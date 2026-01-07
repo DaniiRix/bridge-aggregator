@@ -1,9 +1,12 @@
 import { Button } from "@chakra-ui/react";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import {
+  useAddRecentTransaction,
+  useConnectModal,
+} from "@rainbow-me/rainbowkit";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { type Address, erc20Abi, parseUnits } from "viem";
-import { useConnection, useWriteContract } from "wagmi";
+import { useConnection, useSendTransaction, useWriteContract } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { useQuote } from "@/hooks/use-quote";
 import { wagmiConfig } from "@/lib/providers";
@@ -12,11 +15,21 @@ import { useBridge } from "@/lib/providers/bridge-store";
 export const BridgeAction = () => {
   const { address } = useConnection();
   const { openConnectModal } = useConnectModal();
+  const addRecentTransaction = useAddRecentTransaction();
+
   const { mutateAsync: writeContract } = useWriteContract();
+  const { mutateAsync: sendBridgeTransaction } = useSendTransaction({
+    mutation: {
+      onSuccess() {
+        queryClient.refetchQueries({ queryKey: ["token-balances"] });
+      },
+    },
+  });
+
   const queryClient = useQueryClient();
 
   const { selectedAdapter, from, to } = useBridge((state) => state);
-  const { data: quoteData } = useQuote();
+  const { data: quoteData, isLoading: areQuotesLoading } = useQuote();
   const { quotes = [] } = quoteData || {};
 
   const isDisabled = useMemo(() => {
@@ -57,6 +70,11 @@ export const BridgeAction = () => {
     await waitForTransactionReceipt(wagmiConfig, {
       hash,
     });
+
+    addRecentTransaction({
+      hash,
+      description: `Approved token for ${selectedQuote.adapter.name}`,
+    });
   };
 
   const { data: allowance, refetch: refetchAllowance } = useQuery({
@@ -70,7 +88,7 @@ export const BridgeAction = () => {
       if (!selectedQuote || !selectedQuote.tokenApprovalAddress) return 0;
 
       const allowance = await readContract(wagmiConfig, {
-        address: selectedQuote.tokenApprovalAddress as Address,
+        address: from.token.address as Address,
         abi: erc20Abi,
         functionName: "allowance",
         args: [address, selectedQuote.tokenApprovalAddress as Address],
@@ -81,7 +99,7 @@ export const BridgeAction = () => {
     enabled: Boolean(selectedAdapter && from.token && address),
   });
 
-  const approveTokenMutation = useMutation({
+  const { mutateAsync: approveTokenMutation } = useMutation({
     mutationFn: approveToken,
     onMutate: () => {
       queryClient.invalidateQueries({ queryKey: ["quotes"] });
@@ -91,16 +109,42 @@ export const BridgeAction = () => {
     },
   });
 
-  const handleBridge = useCallback(() => {
+  const handleBridge = useCallback(async () => {
     if (isDisabled) return;
 
     if (
       !allowance ||
       BigInt(allowance) < parseUnits(from.amount!, from.token!.decimals)
     ) {
-      approveTokenMutation.mutate();
+      await approveTokenMutation();
     }
-  }, [isDisabled, from, allowance, approveTokenMutation]);
+
+    const selectedRoute = quotes.find(
+      (q) => q.adapter.name === selectedAdapter,
+    );
+    if (!selectedRoute) return;
+
+    const hex = await sendBridgeTransaction(selectedRoute.txRequest);
+
+    await waitForTransactionReceipt(wagmiConfig, {
+      hash: hex,
+    });
+
+    addRecentTransaction({
+      hash: hex,
+      description: `Cross chain swap from ${from.token!.symbol} to ${to.token!.symbol} via ${selectedAdapter}`,
+    });
+  }, [
+    isDisabled,
+    quotes,
+    from,
+    to,
+    selectedAdapter,
+    allowance,
+    addRecentTransaction,
+    approveTokenMutation,
+    sendBridgeTransaction,
+  ]);
 
   if (!address)
     return (
@@ -116,6 +160,8 @@ export const BridgeAction = () => {
       w="100%"
       disabled={isDisabled}
       onClick={handleBridge}
+      loading={areQuotesLoading}
+      loadingText="Fetching quotes"
     >
       {!selectedAdapter ? "Select Route" : "Bridge"}
     </Button>

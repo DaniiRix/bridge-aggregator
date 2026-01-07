@@ -47,7 +47,11 @@ export default function BridgeAggregatorPage() {
   const { data: tokensWithBalance } = useTokenBalance(from.chain?.id);
   const { data: toTokenPrice } = useTokenPrice(to.token);
 
-  const { data: quoteData, isLoading: areQuotesLoading } = useQuote();
+  const {
+    data: quoteData,
+    isLoading: areQuotesLoading,
+    isSuccess,
+  } = useQuote();
   const { quotes = [], warnings = [] } = quoteData || {};
 
   const routesRef = useRef(null);
@@ -58,10 +62,10 @@ export default function BridgeAggregatorPage() {
         tokensWithBalance?.find((t) => t.address === from.token?.address)
           ?.amount ?? "0",
       to:
-        tokensWithBalance?.find((t) => t.address === from.token?.address)
+        tokensWithBalance?.find((t) => t.address === to.token?.address)
           ?.amount ?? "0",
     }),
-    [tokensWithBalance, from.token?.address],
+    [tokensWithBalance, from.token, to.token],
   );
 
   useEffect(() => {
@@ -118,7 +122,11 @@ export default function BridgeAggregatorPage() {
       );
     }
 
-    if (!quotes || quotes?.length === 0) {
+    if (!quotes || quotes.length === 0) {
+      if (isSuccess) {
+        return <NoRouteFound />;
+      }
+
       return <RouteNotSelected />;
     }
 
@@ -131,80 +139,95 @@ export default function BridgeAggregatorPage() {
           Best route is selected based on net output after gas fees.
         </Text>
 
-        {quotes?.map((q, qIdx) => (
-          <Box
-            key={q.adapter.name}
-            w="100%"
-            p={4}
-            bg="bg.2"
-            borderRadius="lg"
-            border="2px solid"
-            borderColor={
-              selectedAdapter === q.adapter.name ? "blue.500" : "transparent"
-            }
-            cursor="pointer"
-            _hover={{ borderColor: "gray.600" }}
-            onClick={() => selectAdapter(q.adapter.name)}
-          >
-            <Flex justify="space-between" align="center">
-              <Flex align="center" gap={2}>
-                <TokenWithChainLogo token={to.token!} chain={to.chain!} />
-                <Flex direction="column">
-                  <Text
-                    fontSize="lg"
-                    color="gray.200"
-                    fontWeight="semibold"
-                    display="flex"
-                    gap={2}
-                  >
-                    {Number.parseFloat(
-                      formatUnits(
-                        BigInt(q.estimatedAmount),
-                        to.token!.decimals,
-                      ),
-                    ).toFixed(to.token!.decimals / 2)}{" "}
-                    <Text color="gray.400">{to.token!.symbol}</Text>
-                  </Text>
-                  <Text fontSize="sm" color="gray.400">
-                    ≈ $
-                    {new Decimal(toTokenPrice ?? "0")
-                      .mul(
+        {quotes?.map((q, qIdx) => {
+          const topRouteAmountAfterGasFees = new Decimal(toTokenPrice ?? "0")
+            .mul(
+              formatUnits(
+                BigInt(quotes[0].estimatedAmount),
+                to.token!.decimals,
+              ),
+            )
+            .sub(quotes[0].estimatedFee)
+            .toFixed(2);
+
+          const selectedRouteAmountAfterGasFees = new Decimal(
+            toTokenPrice ?? "0",
+          )
+            .mul(formatUnits(BigInt(q.estimatedAmount), to.token!.decimals))
+            .sub(q.estimatedFee)
+            .toFixed(2);
+
+          const lossPercent = new Decimal(topRouteAmountAfterGasFees)
+            .sub(selectedRouteAmountAfterGasFees)
+            .div(topRouteAmountAfterGasFees)
+            .mul(100)
+            .toDecimalPlaces(2)
+            .toNumber();
+          return (
+            <Box
+              key={q.adapter.name}
+              w="100%"
+              p={4}
+              bg="bg.2"
+              borderRadius="lg"
+              border="2px solid"
+              borderColor={
+                selectedAdapter === q.adapter.name ? "blue.500" : "transparent"
+              }
+              cursor="pointer"
+              _hover={{ borderColor: "gray.600" }}
+              onClick={() => selectAdapter(q.adapter.name)}
+            >
+              <Flex justify="space-between" align="center">
+                <Flex align="center" gap={2}>
+                  <TokenWithChainLogo token={to.token!} chain={to.chain!} />
+                  <Flex direction="column">
+                    <Text
+                      fontSize="lg"
+                      color="gray.200"
+                      fontWeight="semibold"
+                      display="flex"
+                      gap={2}
+                    >
+                      {Number.parseFloat(
                         formatUnits(
                           BigInt(q.estimatedAmount),
                           to.token!.decimals,
                         ),
-                      )
-                      .sub(q.estimatedFee)
-                      .toFixed(2)}{" "}
-                    after gas fees
-                  </Text>
+                      ).toFixed(to.token!.decimals / 2)}{" "}
+                      <Text color="gray.400">{to.token!.symbol}</Text>
+                    </Text>
+                    <Text fontSize="sm" color="gray.400">
+                      ≈ ${selectedRouteAmountAfterGasFees} after gas fees
+                    </Text>
+                  </Flex>
                 </Flex>
-              </Flex>
 
-              <Flex direction="column" gap={2} align="flex-end">
-                <Text fontWeight="medium" fontSize="sm">
-                  {qIdx === 0 ? "BEST" : qIdx}
-                </Text>
-                <Flex
-                  fontWeight="medium"
-                  display="flex"
-                  fontSize="sm"
-                  gap={1.5}
-                  alignItems="center"
-                >
-                  <Text color="gray.400">via</Text>
-                  <Image
-                    src={q.adapter.logo}
-                    alt={q.adapter.name}
-                    width="16px"
-                    height="16px"
-                  />
-                  <Text> {q.adapter.name}</Text>
+                <Flex direction="column" gap={2} align="flex-end">
+                  <Text fontWeight="medium" fontSize="sm">
+                    {qIdx === 0 ? "BEST" : `-${lossPercent}%`}
+                  </Text>
+                  <Flex
+                    fontWeight="medium"
+                    display="flex"
+                    fontSize="sm"
+                    gap={1.5}
+                    alignItems="center"
+                  >
+                    <Text color="gray.400">via</Text>
+                    <Image
+                      src={q.adapter.logo}
+                      alt={q.adapter.name}
+                      width="16px"
+                      height="16px"
+                    />
+                    <Text> {q.adapter.name}</Text>
+                  </Flex>
                 </Flex>
               </Flex>
-            </Flex>
-          </Box>
-        ))}
+            </Box>
+          );
+        })}
       </VStack>
     );
   };
@@ -496,6 +519,68 @@ const RouteNotSelected = () => {
             </Text>
           </Flex>
         </HStack>
+
+        <Text fontSize="sm" color="gray.300" textAlign="center" mt={6}>
+          LlamaBridge looks for the best route for your trade <br /> among a
+          variety of Bridge Aggregators, guaranteeing you <br /> the best
+          execution prices in DeFi.
+          <br /> <br /> Try it now or{" "}
+          <Link
+            href="https://twitter.com/defillama/status/1609989799653285888"
+            textDecoration={"underline"}
+          >
+            learn more
+            <ExternalLinkIcon size={14} />
+          </Link>
+        </Text>
+      </Box>
+    </Flex>
+  );
+};
+
+const NoRouteFound = () => {
+  return (
+    <Flex flexDir="column" justifyContent="space-around" h="100%">
+      <Flex position="relative">
+        <Flex
+          position="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          zIndex={1}
+        >
+          {LlamaIcon}
+        </Flex>
+
+        <Box
+          display="flex"
+          width="fit-content"
+          overflow="hidden"
+          my={20}
+          px={48}
+          animationName="slideX"
+          animationDuration="10s"
+          animationTimingFunction="linear"
+          animationIterationCount="infinite"
+        >
+          {[...AggIcons, ...AggIcons].map((Icon, i) => (
+            <Box
+              key={i}
+              boxShadow="0px 2.63014px 15.7808px rgba(0, 0, 0, 0.45)"
+              w="48px"
+              h="48px"
+              mr="48px"
+            >
+              {Icon}
+            </Box>
+          ))}
+        </Box>
+      </Flex>
+
+      <Box zIndex={1}>
+        <Text fontSize="2xl" textAlign="center" mt="4" fontWeight="bold">
+          No Route Found
+        </Text>
 
         <Text fontSize="sm" color="gray.300" textAlign="center" mt={6}>
           LlamaBridge looks for the best route for your trade <br /> among a

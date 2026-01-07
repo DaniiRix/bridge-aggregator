@@ -1,4 +1,5 @@
 import type { Hex } from "viem";
+import type { PrepareTransactionRequestReturnType } from "wagmi/actions";
 
 export interface QuoteRequest {
   srcChainId: number;
@@ -15,7 +16,7 @@ export interface Quote {
   estimatedFee: string;
   estimatedTime: number;
   estimatedAmount: string;
-  rawQuote: any;
+  txRequest: PrepareTransactionRequestReturnType;
 }
 
 export abstract class BaseAdapter {
@@ -25,8 +26,6 @@ export abstract class BaseAdapter {
   ) {}
 
   abstract getQuote(request: QuoteRequest): Promise<Quote>;
-
-  abstract bridge(request: QuoteRequest, quote: Quote): Promise<string>;
 
   supportsRoute?(request: QuoteRequest): Promise<boolean>;
 }
