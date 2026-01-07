@@ -26,7 +26,7 @@ export const useTokenBalance = (chainId?: number) => {
   return useQuery<TokenWithBalance[]>({
     queryKey: ["token-balances", address, chainId],
     queryFn: () => getBalances(address, chainId, tokens),
-    enabled: Boolean(address && chainId && !!tokens),
+    enabled: Boolean(!!address && chainId && !!tokens),
     staleTime: STALE_TIME_MS,
     refetchInterval: STALE_TIME_MS,
     retry: 2,

@@ -14,19 +14,11 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
 import Decimal from "decimal.js-light";
 import { CheckCircle2Icon, ExternalLinkIcon, InfoIcon } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 import { formatUnits } from "viem";
-import { useConnection } from "wagmi";
+import { BridgeAction } from "@/components/bridge-action";
 import { AggIcons, LlamaIcon } from "@/components/icons";
 import { QuoteSkeleton } from "@/components/skeleton/quote";
 import { TokenSwitcher } from "@/components/token-switcher";
@@ -39,26 +31,24 @@ import { isInputGreaterThanDecimals } from "@/utils/number";
 import { Tooltip } from "../components/ui/tooltip";
 
 export default function BridgeAggregatorPage() {
-  const { address } = useConnection();
-  const { openConnectModal } = useConnectModal();
-
   const switchPrivacyId = useId();
 
   const {
     isPrivacyEnabled,
+    selectedAdapter,
     from,
     to,
     togglePrivacy,
+    selectAdapter,
     setFromAmount,
     setToAmount,
   } = useBridge((state) => state);
 
   const { data: tokensWithBalance } = useTokenBalance(from.chain?.id);
-
   const { data: toTokenPrice } = useTokenPrice(to.token);
-  const { quotes, isLoading: areQuotesLoading, warnings } = useQuote();
 
-  const [aggregator, setAggregator] = useState("");
+  const { data: quoteData, isLoading: areQuotesLoading } = useQuote();
+  const { quotes = [], warnings = [] } = quoteData || {};
 
   const routesRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -109,10 +99,6 @@ export default function BridgeAggregatorPage() {
     }
   }, [from.token, userTokensBalance.from, setFromAmount]);
 
-  const handleBridge = useCallback(() => {
-    console.log("handle bridge");
-  }, []);
-
   const renderQuotes = () => {
     if (areQuotesLoading) {
       return (
@@ -154,11 +140,11 @@ export default function BridgeAggregatorPage() {
             borderRadius="lg"
             border="2px solid"
             borderColor={
-              aggregator === q.adapter.name ? "blue.500" : "transparent"
+              selectedAdapter === q.adapter.name ? "blue.500" : "transparent"
             }
             cursor="pointer"
             _hover={{ borderColor: "gray.600" }}
-            onClick={() => setAggregator(q.adapter.name)}
+            onClick={() => selectAdapter(q.adapter.name)}
           >
             <Flex justify="space-between" align="center">
               <Flex align="center" gap={2}>
@@ -412,33 +398,7 @@ export default function BridgeAggregatorPage() {
               </VStack>
             )}
 
-            {address ? (
-              <Button
-                colorPalette="blue"
-                size="lg"
-                w="100%"
-                disabled={
-                  !from.chain ||
-                  !from.token ||
-                  !from.amount ||
-                  !to.chain ||
-                  !to.token ||
-                  !to.amount
-                }
-                onClick={handleBridge}
-              >
-                Bridge
-              </Button>
-            ) : (
-              <Button
-                colorPalette="blue"
-                size="lg"
-                w="100%"
-                onClick={openConnectModal}
-              >
-                Connect Wallet
-              </Button>
-            )}
+            <BridgeAction />
           </VStack>
         </Box>
 
