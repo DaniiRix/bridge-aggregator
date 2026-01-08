@@ -13,7 +13,11 @@ export const truncate = (str?: string, length = 4) => {
 export const truncateAddress = (address: string, length = 4) =>
   `${address.slice(0, length + 2)}...${address.slice(-length)}`;
 
-export const normalizeAddress = (address?: string) => address?.toLowerCase();
+export function normalizeAddress(address: string): string;
+export function normalizeAddress(address?: undefined): undefined;
+export function normalizeAddress(address?: string) {
+  return address?.toLowerCase();
+}
 
 export const scramble = (str: string) =>
   str.split("").reduce((a, b) => {

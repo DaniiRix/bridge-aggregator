@@ -61,8 +61,10 @@ export default function BridgeAggregatorPage() {
   const routesRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const userTokensBalance = useMemo(() => {
-    const normalizedFrom = normalizeAddress(from.token?.address);
-    const normalizedTo = normalizeAddress(to.token?.address);
+    if (!from.token || !to.token) return { from: "0", to: "0" };
+
+    const normalizedFrom = normalizeAddress(from.token.address);
+    const normalizedTo = normalizeAddress(to.token.address);
 
     return {
       from:

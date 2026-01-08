@@ -37,19 +37,6 @@ export class BridgeAggregator {
     );
   }
 
-  async bridge(
-    adapterName: string,
-    request: QuoteRequest,
-    quote: Quote,
-  ): Promise<string> {
-    const adapter = this.adapters.get(adapterName);
-    if (!adapter) {
-      throw new Error(`Adapter ${adapterName} not found`);
-    }
-
-    return adapter.bridge(request, quote);
-  }
-
   private async getQuote(
     adapter: BaseAdapter,
     request: QuoteRequest,

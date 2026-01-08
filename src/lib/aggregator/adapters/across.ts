@@ -1,39 +1,11 @@
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
-interface ChainAndToken {
-  chainId: number;
-  name: string;
-  logoURI: string;
-  tokens: string[];
-}
-
 export class AcrossAdapter extends BaseAdapter {
   apiEndpoint = "https://app.across.to/api";
   integratorId = ""; // @todo: add integrator id
 
   constructor() {
     super("across", "https://icons.llamao.fi/icons/protocols/across?w=48&q=75");
-  }
-
-  async getSupportedChainsAndTokens(): Promise<ChainAndToken[]> {
-    const [resChain, resTokens] = await Promise.all([
-      fetch(`${this.apiEndpoint}/swap/chains`),
-      fetch(`${this.apiEndpoint}/swap/tokens`),
-    ]);
-
-    if (!resChain.ok || !resTokens.ok) {
-      throw new Error("Failed to fetch supported chains and tokens");
-    }
-
-    const chains = await resChain.json();
-    const tokens = await resTokens.json();
-
-    return chains.map((chain: any) => ({
-      chainId: chain.chainId,
-      name: chain.name,
-      logoURI: chain.logoURI,
-      tokens: tokens.filter((token: any) => token.chainId === chain.chainId),
-    }));
   }
 
   async getQuote(request: QuoteRequest): Promise<Quote> {
