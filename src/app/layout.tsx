@@ -1,10 +1,10 @@
+import { Container } from "@chakra-ui/react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Navbar } from "@/components/navbar";
 import { Providers } from "@/lib/providers";
 
 import "@rainbow-me/rainbowkit/styles.css";
-import { Container } from "@chakra-ui/react";
-import { Navbar } from "@/components/navbar";
 
 const inter = Inter({
   subsets: ["latin"],

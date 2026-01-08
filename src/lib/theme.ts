@@ -2,6 +2,14 @@ import { defineConfig } from "@chakra-ui/react";
 
 export const themeConfig = defineConfig({
   globalCss: {
+    "*": {
+      scrollbarWidth: "thin",
+      scrollbarColor: "var(--chakra-colors-bg-3) transparent",
+    },
+    "::-webkit-scrollbar": {
+      w: "6px",
+      h: "6px",
+    },
     "html, body": {
       margin: 0,
       padding: 0,

@@ -5,7 +5,7 @@ import {
 } from "@rainbow-me/rainbowkit";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
-import { type Address, erc20Abi, parseUnits } from "viem";
+import { type Address, erc20Abi, parseUnits, zeroAddress } from "viem";
 import {
   useConnection,
   useSendTransaction,
@@ -23,6 +23,8 @@ export const BridgeAction = () => {
   const { openConnectModal } = useConnectModal();
   const addRecentTransaction = useAddRecentTransaction();
 
+  const queryClient = useQueryClient();
+
   const { mutateAsync: switchChainAsync } = useSwitchChain();
   const { mutateAsync: writeContract, isPending: isApproving } =
     useWriteContract();
@@ -34,8 +36,6 @@ export const BridgeAction = () => {
         },
       },
     });
-
-  const queryClient = useQueryClient();
 
   const { selectedAdapter, from, to } = useBridge((state) => state);
   const { data: quoteData, isLoading: areQuotesLoading } = useQuote();
@@ -92,7 +92,14 @@ export const BridgeAction = () => {
   const { data: allowance, refetch: refetchAllowance } = useQuery({
     queryKey: ["allowance", selectedAdapter, from.token?.address],
     queryFn: async () => {
-      if (!selectedAdapter || !from.token || !address) return 0;
+      if (
+        !selectedAdapter ||
+        !from.token ||
+        !address ||
+        from.token.address === zeroAddress
+      ) {
+        return BigInt(0);
+      }
 
       const selectedQuote = quotes.find(
         (q) => q.adapter.name === selectedAdapter,
@@ -108,7 +115,13 @@ export const BridgeAction = () => {
 
       return allowance;
     },
-    enabled: Boolean(selectedAdapter && from.token && address),
+    enabled: Boolean(
+      selectedAdapter &&
+        from.token &&
+        address &&
+        from.token.address !== zeroAddress,
+    ),
+    staleTime: 10_000,
   });
 
   const { mutateAsync: approveTokenMutation } = useMutation({
@@ -137,8 +150,9 @@ export const BridgeAction = () => {
     }
 
     if (
-      !allowance ||
-      BigInt(allowance) < parseUnits(from.amount!, from.token!.decimals)
+      from.token!.address !== zeroAddress &&
+      (!allowance ||
+        BigInt(allowance) < parseUnits(from.amount!, from.token!.decimals))
     ) {
       await approveTokenMutation();
     }
@@ -159,7 +173,12 @@ export const BridgeAction = () => {
 
     addRecentTransaction({
       hash: hex,
-      description: `Cross chain swap from ${from.token!.symbol} to ${to.token!.symbol} via ${selectedAdapter}`,
+      description: `Bridged ${from.token!.symbol} to ${to.token!.symbol} via ${selectedAdapter}`,
+    });
+
+    toaster.create({
+      title: "Bridge successful",
+      type: "success",
     });
   }, [
     isDisabled,
