@@ -128,7 +128,10 @@ export const BridgeAction = () => {
       try {
         await switchChainAsync({ chainId: from.chain!.id });
       } catch (error) {
-        toaster.error("Failed to switch chain");
+        toaster.create({
+          title: "Failed to switch chain",
+          type: "error",
+        });
         return;
       }
     }
