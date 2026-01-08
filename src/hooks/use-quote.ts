@@ -30,7 +30,8 @@ export const useQuote = () => {
         from.token &&
         to.chain &&
         to.token &&
-        debouncedAmount,
+        debouncedAmount &&
+        parseFloat(debouncedAmount),
     ),
     staleTime: STALE_TIME_MS,
     refetchInterval: STALE_TIME_MS,
@@ -50,6 +51,7 @@ const getQuotes = async (
     !from?.chain ||
     !from?.token ||
     !debouncedAmount ||
+    !parseFloat(debouncedAmount) ||
     !to?.chain ||
     !to?.token
   )

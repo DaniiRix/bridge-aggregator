@@ -1,5 +1,4 @@
 import type { Hex } from "viem";
-import type { PrepareTransactionRequestReturnType } from "wagmi/actions";
 
 export interface QuoteRequest {
   srcChainId: number;
@@ -16,7 +15,11 @@ export interface Quote {
   estimatedFee: string;
   estimatedTime: number;
   estimatedAmount: string;
-  txRequest: PrepareTransactionRequestReturnType;
+  txRequest: {
+    to: Hex;
+    data: Hex;
+    value?: bigint;
+  };
 }
 
 export abstract class BaseAdapter {

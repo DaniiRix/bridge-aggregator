@@ -28,6 +28,7 @@ import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useTokenPrice } from "@/hooks/use-token-price";
 import { useBridge } from "@/lib/providers/bridge-store";
 import { isInputGreaterThanDecimals } from "@/utils/number";
+import { normalizeAddress } from "@/utils/string";
 import { Tooltip } from "../components/ui/tooltip";
 
 export default function BridgeAggregatorPage() {
@@ -44,7 +45,10 @@ export default function BridgeAggregatorPage() {
     setToAmount,
   } = useBridge((state) => state);
 
-  const { data: tokensWithBalance } = useTokenBalance(from.chain?.id);
+  const { data: tokensWithBalanceOnFromChain } = useTokenBalance(
+    from.chain?.id,
+  );
+  const { data: tokensWithBalanceOnToChain } = useTokenBalance(to.chain?.id);
   const { data: toTokenPrice } = useTokenPrice(to.token);
 
   const {
@@ -56,17 +60,24 @@ export default function BridgeAggregatorPage() {
 
   const routesRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const userTokensBalance = useMemo(
-    () => ({
+  const userTokensBalance = useMemo(() => {
+    const normalizedFrom = normalizeAddress(from.token?.address);
+    const normalizedTo = normalizeAddress(to.token?.address);
+
+    return {
       from:
-        tokensWithBalance?.find((t) => t.address === from.token?.address)
+        tokensWithBalanceOnFromChain?.find((t) => t.address === normalizedFrom)
           ?.amount ?? "0",
       to:
-        tokensWithBalance?.find((t) => t.address === to.token?.address)
+        tokensWithBalanceOnToChain?.find((t) => t.address === normalizedTo)
           ?.amount ?? "0",
-    }),
-    [tokensWithBalance, from.token, to.token],
-  );
+    };
+  }, [
+    tokensWithBalanceOnFromChain,
+    tokensWithBalanceOnToChain,
+    from.token,
+    to.token,
+  ]);
 
   useEffect(() => {
     if (!!to.token && quotes?.length > 0) {
@@ -347,7 +358,7 @@ export default function BridgeAggregatorPage() {
                             BigInt(userTokensBalance.from),
                             from.token.decimals,
                           ),
-                        ).toFixed(2)
+                        ).toFixed(4)
                       : "-"}
                   </Button>
                 </Box>
@@ -393,7 +404,7 @@ export default function BridgeAggregatorPage() {
                             BigInt(userTokensBalance.to),
                             to.token.decimals,
                           ),
-                        ).toFixed(2)
+                        ).toFixed(4)
                       : "-"}
                   </Text>
                 </Box>

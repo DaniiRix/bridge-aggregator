@@ -6,25 +6,34 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { type Address, erc20Abi, parseUnits } from "viem";
-import { useConnection, useSendTransaction, useWriteContract } from "wagmi";
+import {
+  useConnection,
+  useSendTransaction,
+  useSwitchChain,
+  useWriteContract,
+} from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { useQuote } from "@/hooks/use-quote";
 import { wagmiConfig } from "@/lib/providers";
 import { useBridge } from "@/lib/providers/bridge-store";
+import { toaster } from "./ui/toaster";
 
 export const BridgeAction = () => {
-  const { address } = useConnection();
+  const { address, chainId } = useConnection();
   const { openConnectModal } = useConnectModal();
   const addRecentTransaction = useAddRecentTransaction();
 
-  const { mutateAsync: writeContract } = useWriteContract();
-  const { mutateAsync: sendBridgeTransaction } = useSendTransaction({
-    mutation: {
-      onSuccess() {
-        queryClient.refetchQueries({ queryKey: ["token-balances"] });
+  const { mutateAsync: switchChainAsync } = useSwitchChain();
+  const { mutateAsync: writeContract, isPending: isApproving } =
+    useWriteContract();
+  const { mutateAsync: sendBridgeTransaction, isPending: isSending } =
+    useSendTransaction({
+      mutation: {
+        onSuccess() {
+          queryClient.refetchQueries({ queryKey: ["token-balances"] });
+        },
       },
-    },
-  });
+    });
 
   const queryClient = useQueryClient();
 
@@ -38,12 +47,15 @@ export const BridgeAction = () => {
       !from.chain ||
       !from.token ||
       !from.amount ||
+      !parseFloat(from.amount) ||
       !to.chain ||
       !to.token ||
       !to.amount ||
+      isApproving ||
+      isSending ||
       !selectedAdapter
     );
-  }, [address, from, to, selectedAdapter]);
+  }, [address, from, to, selectedAdapter, isApproving, isSending]);
 
   const approveToken = async () => {
     const selectedQuote = quotes.find(
@@ -112,6 +124,15 @@ export const BridgeAction = () => {
   const handleBridge = useCallback(async () => {
     if (isDisabled) return;
 
+    if (chainId !== from.chain!.id) {
+      try {
+        await switchChainAsync({ chainId: from.chain!.id });
+      } catch (error) {
+        toaster.error("Failed to switch chain");
+        return;
+      }
+    }
+
     if (
       !allowance ||
       BigInt(allowance) < parseUnits(from.amount!, from.token!.decimals)
@@ -124,7 +145,10 @@ export const BridgeAction = () => {
     );
     if (!selectedRoute) return;
 
-    const hex = await sendBridgeTransaction(selectedRoute.txRequest);
+    const hex = await sendBridgeTransaction({
+      ...selectedRoute.txRequest,
+      chainId: from.chain!.id,
+    });
 
     await waitForTransactionReceipt(wagmiConfig, {
       hash: hex,
@@ -136,11 +160,13 @@ export const BridgeAction = () => {
     });
   }, [
     isDisabled,
+    chainId,
     quotes,
     from,
     to,
     selectedAdapter,
     allowance,
+    switchChainAsync,
     addRecentTransaction,
     approveTokenMutation,
     sendBridgeTransaction,
@@ -160,8 +186,8 @@ export const BridgeAction = () => {
       w="100%"
       disabled={isDisabled}
       onClick={handleBridge}
-      loading={areQuotesLoading}
-      loadingText="Fetching quotes"
+      loading={areQuotesLoading || isApproving || isSending}
+      loadingText={areQuotesLoading ? "Fetching quotes" : "Bridging"}
     >
       {!selectedAdapter ? "Select Route" : "Bridge"}
     </Button>

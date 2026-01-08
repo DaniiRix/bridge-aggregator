@@ -1,5 +1,3 @@
-import { prepareTransactionRequest } from "wagmi/actions";
-import { wagmiConfig } from "@/lib/providers";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
 interface ChainAndToken {
@@ -66,22 +64,17 @@ export class AcrossAdapter extends BaseAdapter {
       throw new Error("Swap simulation failed");
     }
 
-    const txRequest = await prepareTransactionRequest(wagmiConfig, {
-      chainId: data.swapTx.chainId,
-      to: data.swapTx.to,
-      data: data.swapTx.data,
-      value: data.swapTx.value ? BigInt(data.swapTx.value) : undefined,
-    });
-
-    console.log({ txRequest });
-
     return {
       adapter: { name: this.name, logo: this.logo },
-      tokenApprovalAddress: approval?.to,
+      tokenApprovalAddress: data?.checks.allowance.spender,
       estimatedFee: data.fees?.total?.amountUsd || "0",
       estimatedTime: data.expectedFillTime || 0,
       estimatedAmount: data.expectedOutputAmount || "0",
-      txRequest,
+      txRequest: {
+        to: data.swapTx.to,
+        data: data.swapTx.data,
+        value: data.swapTx.value ? BigInt(data.swapTx.value) : undefined,
+      },
     };
   }
 }
