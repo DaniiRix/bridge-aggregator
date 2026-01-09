@@ -49,6 +49,8 @@ export default function BridgeAggregatorPage() {
     from.chain?.id,
   );
   const { data: tokensWithBalanceOnToChain } = useTokenBalance(to.chain?.id);
+
+  const { data: fromTokenPrice } = useTokenPrice(from.token);
   const { data: toTokenPrice } = useTokenPrice(to.token);
 
   const {
@@ -233,6 +235,7 @@ export default function BridgeAggregatorPage() {
                       alt={q.adapter.name}
                       width="16px"
                       height="16px"
+                      rounded="full"
                     />
                     <Text> {q.adapter.name}</Text>
                   </Flex>
@@ -345,24 +348,33 @@ export default function BridgeAggregatorPage() {
                     <TokenSwitcher side="from" />
                   </Flex>
 
-                  <Button
-                    fontSize="xs"
-                    color="gray.400"
-                    variant="ghost"
-                    p={0}
-                    height="fit-content"
-                    onClick={handleMaxClick}
-                  >
-                    Balance:{" "}
-                    {from.token
-                      ? Number.parseFloat(
-                          formatUnits(
-                            BigInt(userTokensBalance.from),
-                            from.token.decimals,
-                          ),
-                        ).toFixed(4)
-                      : "-"}
-                  </Button>
+                  <Flex justify="space-between" align="center">
+                    <Text fontSize="xs" color="gray.400">
+                      $
+                      {new Decimal(fromTokenPrice || "0")
+                        .mul(from.amount || "0")
+                        .toDecimalPlaces(2)
+                        .toString()}
+                    </Text>
+                    <Button
+                      fontSize="xs"
+                      color="gray.400"
+                      variant="ghost"
+                      p={0}
+                      height="fit-content"
+                      onClick={handleMaxClick}
+                    >
+                      Balance:{" "}
+                      {from.token
+                        ? Number.parseFloat(
+                            formatUnits(
+                              BigInt(userTokensBalance.from),
+                              from.token.decimals,
+                            ),
+                          ).toFixed(4)
+                        : "-"}
+                    </Button>
+                  </Flex>
                 </Box>
 
                 <Box
@@ -398,17 +410,26 @@ export default function BridgeAggregatorPage() {
                     />
                     <TokenSwitcher side="to" />
                   </Flex>
-                  <Text fontSize="xs" color="gray.400">
-                    Balance:{" "}
-                    {to.token
-                      ? Number.parseFloat(
-                          formatUnits(
-                            BigInt(userTokensBalance.to),
-                            to.token.decimals,
-                          ),
-                        ).toFixed(4)
-                      : "-"}
-                  </Text>
+                  <Flex justify="space-between" align="center">
+                    <Text fontSize="xs" color="gray.400">
+                      $
+                      {new Decimal(toTokenPrice || "0")
+                        .mul(to.amount || "0")
+                        .toDecimalPlaces(2)
+                        .toString()}
+                    </Text>
+                    <Text fontSize="xs" color="gray.400">
+                      Balance:{" "}
+                      {to.token
+                        ? Number.parseFloat(
+                            formatUnits(
+                              BigInt(userTokensBalance.to),
+                              to.token.decimals,
+                            ),
+                          ).toFixed(4)
+                        : "-"}
+                    </Text>
+                  </Flex>
                 </Box>
               </VStack>
             </Box>
