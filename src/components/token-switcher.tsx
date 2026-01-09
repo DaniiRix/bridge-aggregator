@@ -254,7 +254,7 @@ const TokensList = ({
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { data: tokens = [], isLoading: isTokenLoading } = useTokens(
-    side === "from" ? undefined : to.chain?.id,
+    side === "from" ? from.chain?.id : to.chain?.id,
   );
 
   const { data: tokensWithBalances = [], isLoading: isTokenBalanceLoading } =
