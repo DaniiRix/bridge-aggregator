@@ -4,12 +4,14 @@ import { useConnection } from "wagmi";
 import { BridgeAggregator } from "@/lib/aggregator";
 import { AcrossAdapter } from "@/lib/aggregator/adapters/across";
 import type { Quote, QuoteRequest } from "@/lib/aggregator/adapters/base";
+import { RelayAdapter } from "@/lib/aggregator/adapters/relay";
 import { useBridge } from "@/lib/providers/bridge-store";
 import type { BridgeState } from "@/store/bridge";
 import { useDebounce } from "./use-debounce";
 
 const acrossAdapter = new AcrossAdapter();
-const aggregator = new BridgeAggregator([acrossAdapter], {
+const relayAdapter = new RelayAdapter();
+const aggregator = new BridgeAggregator([acrossAdapter, relayAdapter], {
   timeout: 5000,
 });
 
