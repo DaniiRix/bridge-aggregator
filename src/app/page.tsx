@@ -23,7 +23,7 @@ import { useQuote } from "@/hooks/use-quote";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useTokensPrice } from "@/hooks/use-token-price";
 import { useBridge } from "@/lib/providers/bridge-store";
-import { isInputGreaterThanDecimals } from "@/utils/number";
+import { formatNumber, isInputGreaterThanDecimals } from "@/utils/number";
 import { normalizeAddress } from "@/utils/string";
 import { Tooltip } from "../components/ui/tooltip";
 
@@ -242,11 +242,12 @@ export default function BridgeAggregatorPage() {
 
                   <Flex justify="space-between" align="center">
                     <Text fontSize="xs" color="gray.400">
-                      $
-                      {new Decimal(fromTokenPrice || "0")
-                        .mul(from.amount || "0")
-                        .toDecimalPlaces(2)
-                        .toString()}
+                      {formatNumber(
+                        new Decimal(fromTokenPrice || "0")
+                          .mul(from.amount || "0")
+                          .toDecimalPlaces(2)
+                          .toString(),
+                      )}
                     </Text>
                     <Button
                       fontSize="xs"
@@ -304,11 +305,12 @@ export default function BridgeAggregatorPage() {
                   </Flex>
                   <Flex justify="space-between" align="center">
                     <Text fontSize="xs" color="gray.400">
-                      $
-                      {new Decimal(toTokenPrice || "0")
-                        .mul(to.amount || "0")
-                        .toDecimalPlaces(2)
-                        .toString()}
+                      {formatNumber(
+                        new Decimal(toTokenPrice || "0")
+                          .mul(to.amount || "0")
+                          .toDecimalPlaces(2)
+                          .toString(),
+                      )}
                     </Text>
                     <Text fontSize="xs" color="gray.400">
                       Balance:{" "}

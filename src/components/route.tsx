@@ -5,6 +5,7 @@ import { formatUnits } from "viem";
 import { AggIcons, LlamaIcon } from "@/components/icons";
 import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
 import { useBridge } from "@/lib/providers/bridge-store";
+import { formatNumber } from "@/utils/number";
 import { TokenWithChainLogo } from "./ui/dual-token";
 
 export const RouteList = ({ quotes }: { quotes: QuoteWithAmount[] }) => {
@@ -62,7 +63,8 @@ export const RouteList = ({ quotes }: { quotes: QuoteWithAmount[] }) => {
                     <Text color="gray.400">{to.token!.symbol}</Text>
                   </Text>
                   <Text fontSize="sm" color="gray.400">
-                    ≈ ${q.estimatedAmountAfterFeesUSD} after gas fees
+                    ≈ {formatNumber(q.estimatedAmountAfterFeesUSD)} after gas
+                    fees
                   </Text>
                 </Flex>
               </Flex>
