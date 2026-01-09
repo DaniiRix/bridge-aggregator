@@ -58,7 +58,7 @@ export const RouteList = ({ quotes }: { quotes: QuoteWithAmount[] }) => {
                         BigInt(q.estimatedAmount),
                         to.token!.decimals,
                       ),
-                    ).toFixed(to.token!.decimals / 2)}{" "}
+                    ).toFixed(to.token!.decimals / 3)}{" "}
                     <Text color="gray.400">{to.token!.symbol}</Text>
                   </Text>
                   <Text fontSize="sm" color="gray.400">

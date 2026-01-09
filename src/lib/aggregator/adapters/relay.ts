@@ -57,6 +57,7 @@ export class RelayAdapter extends BaseAdapter {
       estimatedFeeUSD: totalFees,
       estimatedTime: data?.details?.timeEstimate || 0,
       estimatedAmount: data?.details?.currencyOut?.amount || "0",
+      gasEstimate: data?.details?.gas?.amount || "0",
       txRequest: {
         to: dataTx.to,
         data: dataTx.data,

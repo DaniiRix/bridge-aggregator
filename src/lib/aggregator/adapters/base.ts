@@ -15,6 +15,7 @@ export interface Quote {
   estimatedFeeUSD: string;
   estimatedTime: number;
   estimatedAmount: string;
+  gasEstimate: string;
   txRequest: {
     to: Hex;
     data: Hex;

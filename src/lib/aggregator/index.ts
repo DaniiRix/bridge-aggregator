@@ -26,6 +26,8 @@ export class BridgeAggregator {
     const results = await Promise.allSettled(quotePromises);
     const quotes: Quote[] = [];
 
+    console.log({ results });
+
     for (const result of results) {
       if (result.status === "fulfilled" && !result.value.error) {
         quotes.push(result.value.quote);

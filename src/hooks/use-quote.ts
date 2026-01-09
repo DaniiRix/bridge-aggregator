@@ -12,7 +12,7 @@ import { RelayAdapter } from "@/lib/aggregator/adapters/relay";
 import { useBridge } from "@/lib/providers/bridge-store";
 import type { BridgeState } from "@/store/bridge";
 import { useDebounce } from "./use-debounce";
-import { useTokenPrice } from "./use-token-price";
+import { useTokensPrice } from "./use-token-price";
 
 const acrossAdapter = new AcrossAdapter();
 const relayAdapter = new RelayAdapter();
@@ -26,22 +26,35 @@ export const useQuote = () => {
   const { address } = useConnection();
   const { from, to } = useBridge((state) => state);
 
-  const debouncedAmount = useDebounce(from.amount, 300);
+  const debouncedAmount = useDebounce(from.amount, 500);
 
-  const { data: tokenPrice } = useTokenPrice(to.token);
+  const { data: { toTokenPrice, gasTokenPrice } = {} } = useTokensPrice();
 
   return useQuery<{ quotes: QuoteWithAmount[]; warnings: string[] }>({
-    queryKey: ["quotes", from, to, debouncedAmount],
-    queryFn: () => getQuotes(address, from, to, debouncedAmount, tokenPrice),
+    queryKey: [
+      "quotes",
+      from.token?.chainId,
+      from.token?.address,
+      to.token?.chainId,
+      to.token?.address,
+      debouncedAmount,
+    ],
+    queryFn: () =>
+      getQuotes(
+        address,
+        from,
+        to,
+        debouncedAmount,
+        toTokenPrice,
+        gasTokenPrice,
+      ),
     enabled: Boolean(
       address &&
         from.chain &&
         from.token &&
         to.chain &&
         to.token &&
-        debouncedAmount &&
-        parseFloat(debouncedAmount) &&
-        tokenPrice,
+        debouncedAmount,
     ),
     staleTime: STALE_TIME_MS,
     refetchInterval: STALE_TIME_MS,
@@ -56,6 +69,7 @@ const getQuotes = async (
   to?: BridgeState["to"],
   debouncedAmount?: string,
   tokenPrice?: string,
+  gasTokenPrice?: string,
 ) => {
   if (
     !address ||
@@ -64,8 +78,7 @@ const getQuotes = async (
     !debouncedAmount ||
     !parseFloat(debouncedAmount) ||
     !to?.chain ||
-    !to?.token ||
-    !tokenPrice
+    !to?.token
   )
     return { quotes: [], warnings: [] };
 
@@ -80,26 +93,29 @@ const getQuotes = async (
   };
 
   const quotes = await aggregator.getQuotes(request);
+  console.log({ quotes });
 
   const quotesWithAmount: QuoteWithAmount[] = quotes.map((q) => {
     const estimatedAmountUSD = new Decimal(tokenPrice ?? "0").mul(
       formatUnits(BigInt(q.estimatedAmount), to.token!.decimals),
     );
 
+    const estimatedAmountAfterFeesUSD = new Decimal(gasTokenPrice ?? "0").mul(
+      formatUnits(BigInt(q.estimatedAmount), to.token!.decimals),
+    );
+
     return {
       ...q,
       estimatedAmountUSD: estimatedAmountUSD.toDecimalPlaces(2).toString(),
-      estimatedAmountAfterFeesUSD: new Decimal(estimatedAmountUSD)
-        .sub(q.estimatedFeeUSD)
-        .toDecimalPlaces(2)
-        .toString(),
+      estimatedAmountAfterFeesUSD: "0",
     };
   });
 
-  const sortedQuotes = quotesWithAmount.sort((a, b) =>
-    BigInt(a.estimatedAmountUSD || 0) < BigInt(b.estimatedAmountUSD || 0)
-      ? 1
-      : -1,
+  console.log({ quotesWithAmount });
+  const sortedQuotes = quotesWithAmount.sort(
+    (a, b) =>
+      parseFloat(b.estimatedAmountAfterFeesUSD || "0") -
+      parseFloat(a.estimatedAmountAfterFeesUSD || "0"),
   );
 
   return { quotes: sortedQuotes, warnings };

@@ -38,8 +38,8 @@ export const BridgeAction = () => {
     });
 
   const { selectedAdapter, from, to } = useBridge((state) => state);
-  const { data: quoteData, isLoading: areQuotesLoading } = useQuote();
-  const { quotes = [] } = quoteData || {};
+  const { data: { quotes = [] } = {}, isLoading: areQuotesLoading } =
+    useQuote();
 
   const isDisabled = useMemo(() => {
     return (
@@ -90,7 +90,12 @@ export const BridgeAction = () => {
   };
 
   const { data: allowance, refetch: refetchAllowance } = useQuery({
-    queryKey: ["allowance", selectedAdapter, from.token?.address],
+    queryKey: [
+      "allowance",
+      selectedAdapter,
+      from.token?.chainId,
+      from.token?.address,
+    ],
     queryFn: async () => {
       if (
         !selectedAdapter ||

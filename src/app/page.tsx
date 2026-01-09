@@ -21,7 +21,7 @@ import { QuoteSkeleton } from "@/components/skeleton/quote";
 import { TokenSwitcher } from "@/components/token-switcher";
 import { useQuote } from "@/hooks/use-quote";
 import { useTokenBalance } from "@/hooks/use-token-balance";
-import { useTokenPrice } from "@/hooks/use-token-price";
+import { useTokensPrice } from "@/hooks/use-token-price";
 import { useBridge } from "@/lib/providers/bridge-store";
 import { isInputGreaterThanDecimals } from "@/utils/number";
 import { normalizeAddress } from "@/utils/string";
@@ -44,15 +44,13 @@ export default function BridgeAggregatorPage() {
   );
   const { data: tokensWithBalanceOnToChain } = useTokenBalance(to.chain?.id);
 
-  const { data: fromTokenPrice } = useTokenPrice(from.token);
-  const { data: toTokenPrice } = useTokenPrice(to.token);
+  const { data: { fromTokenPrice, toTokenPrice } = {} } = useTokensPrice();
 
   const {
-    data: quoteData,
+    data: { quotes = [], warnings = [] } = {},
     isLoading: areQuotesLoading,
     isSuccess,
   } = useQuote();
-  const { quotes = [], warnings = [] } = quoteData || {};
 
   const routesRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);

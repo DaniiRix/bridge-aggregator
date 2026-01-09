@@ -1,15 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
+import { zeroAddress } from "viem";
 import { fetchPrices } from "@/lib/actions/token";
 import { chainIdToName } from "@/lib/constants/chains";
+import { useBridge } from "@/lib/providers/bridge-store";
 import type { Token } from "@/store/bridge";
 
 const STALE_TIME_MS = 60_000;
 
-export const useTokenPrice = (token?: Token) => {
-  return useQuery<string>({
-    queryKey: ["token-price", token?.address],
-    queryFn: () => getTokenPrice(token),
-    enabled: Boolean(!!token),
+export const useTokensPrice = () => {
+  const { from, to } = useBridge((state) => state);
+
+  return useQuery<{
+    fromTokenPrice: string;
+    toTokenPrice: string;
+    gasTokenPrice: string;
+  }>({
+    queryKey: [
+      "token-price",
+      from.chain?.id,
+      from.token?.address,
+      to.chain?.id,
+      to.token?.address,
+    ],
+    queryFn: () => getTokensPrice(from.token, to.token),
+    enabled: Boolean(
+      from.chain?.id && from.token?.address && to.token?.address,
+    ),
     staleTime: STALE_TIME_MS,
     refetchInterval: STALE_TIME_MS,
     retry: 2,
@@ -17,20 +33,49 @@ export const useTokenPrice = (token?: Token) => {
   });
 };
 
-async function getTokenPrice(token?: Token): Promise<string> {
-  if (!token) return "0";
+async function getTokensPrice(
+  fromToken?: Token,
+  toToken?: Token,
+): Promise<{
+  fromTokenPrice: string;
+  toTokenPrice: string;
+  gasTokenPrice: string;
+}> {
+  if (!fromToken || !toToken)
+    return { fromTokenPrice: "0", toTokenPrice: "0", gasTokenPrice: "0" };
 
   try {
-    const chainName = chainIdToName(token.chainId);
-    if (!chainName) {
-      console.warn(`Unknown chain ID: ${token.chainId}`);
-      return "0";
+    const fromChainName = chainIdToName(fromToken.chainId);
+    if (!fromChainName) {
+      console.warn(`Unknown chain ID: ${fromToken.chainId}`);
+      return { fromTokenPrice: "0", toTokenPrice: "0", gasTokenPrice: "0" };
     }
 
-    const tokenPrice = await fetchPrices([`${chainName}:${token.address}`]);
-    return String(tokenPrice[`${chainName}:${token.address}`]?.price ?? 0);
+    const toChainName = chainIdToName(toToken.chainId);
+    if (!toChainName) {
+      console.warn(`Unknown chain ID: ${toToken.chainId}`);
+      return { fromTokenPrice: "0", toTokenPrice: "0", gasTokenPrice: "0" };
+    }
+
+    const tokenPrice = await fetchPrices([
+      `${fromChainName}:${fromToken.address}`,
+      `${toChainName}:${toToken.address}`,
+      `${fromChainName}:${zeroAddress}`,
+    ]);
+
+    return {
+      fromTokenPrice: String(
+        tokenPrice[`${fromChainName}:${fromToken.address}`]?.price ?? 0,
+      ),
+      toTokenPrice: String(
+        tokenPrice[`${toChainName}:${toToken.address}`]?.price ?? 0,
+      ),
+      gasTokenPrice: String(
+        tokenPrice[`${fromChainName}:${zeroAddress}`]?.price ?? 0,
+      ),
+    };
   } catch (error) {
-    console.error(`Failed to fetch token price for ${token.address}`, error);
-    return "0";
+    console.error(`Failed to fetch token prices`, error);
+    return { fromTokenPrice: "0", toTokenPrice: "0", gasTokenPrice: "0" };
   }
 }

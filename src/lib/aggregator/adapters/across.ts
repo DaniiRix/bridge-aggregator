@@ -42,6 +42,7 @@ export class AcrossAdapter extends BaseAdapter {
       estimatedFeeUSD: data.fees?.total?.amountUsd || "0",
       estimatedTime: data.expectedFillTime || 0,
       estimatedAmount: data.expectedOutputAmount || "0",
+      gasEstimate: data.swapTx?.gas || "0",
       txRequest: {
         to: data.swapTx.to,
         data: data.swapTx.data,
