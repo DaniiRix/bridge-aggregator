@@ -1,6 +1,6 @@
 import { Box, Flex, HStack, Image, Link, Text, VStack } from "@chakra-ui/react";
 import Decimal from "decimal.js-light";
-import { CheckCircle2Icon, ExternalLinkIcon } from "lucide-react";
+import { CheckCircle2Icon, ClockIcon, ExternalLinkIcon } from "lucide-react";
 import { formatUnits } from "viem";
 import { AggIcons, LlamaIcon } from "@/components/icons";
 import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
@@ -62,16 +62,33 @@ export const RouteList = ({ quotes }: { quotes: QuoteWithAmount[] }) => {
                     ).toFixed(to.token!.decimals / 3)}{" "}
                     <Text color="gray.400">{to.token!.symbol}</Text>
                   </Text>
-                  <Text fontSize="sm" color="gray.400">
-                    ≈ {formatNumber(q.estimatedAmountAfterFeesUSD)} after gas
-                    fees
-                  </Text>
+
+                  <Flex gap={3}>
+                    <Text fontSize="sm" color="gray.400">
+                      ≈ {formatNumber(q.estimatedAmountAfterFeesUSD)} after gas
+                      fees
+                    </Text>
+                    <Text
+                      fontSize="sm"
+                      color="gray.400"
+                      display="flex"
+                      gap={0.5}
+                      alignItems="center"
+                    >
+                      <ClockIcon size={12} />
+                      {q.estimatedTime}s
+                    </Text>
+                  </Flex>
                 </Flex>
               </Flex>
 
               <Flex direction="column" gap={2} align="flex-end">
-                <Text fontWeight="medium" fontSize="sm">
-                  {qIdx === 0 ? "BEST" : `-${lossPercent}%`}
+                <Text
+                  fontWeight="medium"
+                  fontSize="sm"
+                  color={qIdx !== 0 ? "red.500" : ""}
+                >
+                  {qIdx === 0 ? "BEST" : `${lossPercent}%`}
                 </Text>
                 <Flex
                   fontWeight="medium"

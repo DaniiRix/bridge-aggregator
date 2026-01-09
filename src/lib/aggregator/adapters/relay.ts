@@ -2,6 +2,8 @@
 // for hyperliquid: https://github.com/relayprotocol/relay-kit/blob/522748b8810c3f81d5b9a990485bd7eaf8e8e689/packages/sdk/src/utils/executeSteps/index.ts#L128
 
 import Decimal from "decimal.js-light";
+import { estimateGas } from "wagmi/actions";
+import { wagmiConfig } from "@/lib/providers";
 import { detectWalletType } from "@/utils/wallet";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
@@ -49,7 +51,14 @@ export class RelayAdapter extends BaseAdapter {
 
     const gasFees = data?.fees?.gas?.amountUsd || "0";
     const relayerFees = data?.fees?.relayer?.amountUsd || "0";
-    const totalFees = new Decimal(gasFees).add(relayerFees).toFixed(2);
+    const totalFees = new Decimal(gasFees).add(relayerFees).toFixed(4);
+
+    const estimatedGas = await estimateGas(wagmiConfig, {
+      chainId: srcChainId,
+      to: dataTx.to,
+      data: dataTx.data,
+      value: dataTx.value ? BigInt(dataTx.value) : undefined,
+    });
 
     return {
       adapter: { name: this.name, logo: this.logo },
@@ -57,7 +66,7 @@ export class RelayAdapter extends BaseAdapter {
       estimatedFeeUSD: totalFees,
       estimatedTime: data?.details?.timeEstimate || 0,
       estimatedAmount: data?.details?.currencyOut?.amount || "0",
-      gasEstimate: data?.details?.gas?.amount || "0",
+      gasEstimate: estimatedGas?.toString() || "0",
       txRequest: {
         to: dataTx.to,
         data: dataTx.data,

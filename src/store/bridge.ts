@@ -57,13 +57,24 @@ export const createBridgeStore = (
     togglePrivacy: (checked) => set(() => ({ isPrivacyEnabled: checked })),
     selectAdapter: (adapter) => set(() => ({ selectedAdapter: adapter })),
     setFromChain: (chain) =>
-      set((state) => ({ from: { ...state.from, chain } })),
+      set((state) => ({
+        from: { ...state.from, chain },
+        to: { ...state.to, amount: "" },
+      })),
     setFromToken: (token) =>
-      set((state) => ({ from: { ...state.from, token } })),
+      set((state) => ({
+        from: { ...state.from, token },
+        to: { ...state.to, amount: "" },
+      })),
     setFromAmount: (amount) =>
-      set((state) => ({ from: { ...state.from, amount } })),
-    setToChain: (chain) => set((state) => ({ to: { ...state.to, chain } })),
-    setToToken: (token) => set((state) => ({ to: { ...state.to, token } })),
+      set((state) => ({
+        from: { ...state.from, amount },
+        to: { ...state.to, amount: "" },
+      })),
+    setToChain: (chain) =>
+      set((state) => ({ to: { ...state.to, chain, amount: "" } })),
+    setToToken: (token) =>
+      set((state) => ({ to: { ...state.to, token, amount: "" } })),
     setToAmount: (amount) => set((state) => ({ to: { ...state.to, amount } })),
   }));
 };

@@ -1,3 +1,5 @@
+import { estimateGas } from "wagmi/actions";
+import { wagmiConfig } from "@/lib/providers";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
 export class AcrossAdapter extends BaseAdapter {
@@ -36,13 +38,20 @@ export class AcrossAdapter extends BaseAdapter {
       throw new Error("Swap simulation failed");
     }
 
+    const estimatedGas = await estimateGas(wagmiConfig, {
+      chainId: srcChainId,
+      to: data.swapTx.to,
+      data: data.swapTx.data,
+      value: data.swapTx.value ? BigInt(data.swapTx.value) : undefined,
+    });
+
     return {
       adapter: { name: this.name, logo: this.logo },
       tokenApprovalAddress: data?.checks.allowance.spender,
       estimatedFeeUSD: data.fees?.total?.amountUsd || "0",
       estimatedTime: data.expectedFillTime || 0,
       estimatedAmount: data.expectedOutputAmount || "0",
-      gasEstimate: data.swapTx?.gas || "0",
+      gasEstimate: estimatedGas?.toString() || "0",
       txRequest: {
         to: data.swapTx.to,
         data: data.swapTx.data,

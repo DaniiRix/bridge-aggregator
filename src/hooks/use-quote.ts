@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import Decimal from "decimal.js-light";
 import { type Address, formatUnits, getAddress, parseUnits } from "viem";
-import { useConnection } from "wagmi";
+import { useConnection, useGasPrice } from "wagmi";
 import { BridgeAggregator } from "@/lib/aggregator";
 import { AcrossAdapter } from "@/lib/aggregator/adapters/across";
 import type {
@@ -30,6 +30,10 @@ export const useQuote = () => {
 
   const { data: { toTokenPrice, gasTokenPrice } = {} } = useTokensPrice();
 
+  const { data: gasPrice } = useGasPrice({
+    chainId: from.chain?.id,
+  });
+
   return useQuery<{ quotes: QuoteWithAmount[]; warnings: string[] }>({
     queryKey: [
       "quotes",
@@ -47,6 +51,7 @@ export const useQuote = () => {
         debouncedAmount,
         toTokenPrice,
         gasTokenPrice,
+        gasPrice,
       ),
     enabled: Boolean(
       address &&
@@ -70,6 +75,7 @@ const getQuotes = async (
   debouncedAmount?: string,
   tokenPrice?: string,
   gasTokenPrice?: string,
+  gasPrice?: bigint,
 ) => {
   if (
     !address ||
@@ -78,7 +84,10 @@ const getQuotes = async (
     !debouncedAmount ||
     !parseFloat(debouncedAmount) ||
     !to?.chain ||
-    !to?.token
+    !to?.token ||
+    !tokenPrice ||
+    !gasPrice ||
+    !gasTokenPrice
   )
     return { quotes: [], warnings: [] };
 
@@ -96,22 +105,26 @@ const getQuotes = async (
   console.log({ quotes });
 
   const quotesWithAmount: QuoteWithAmount[] = quotes.map((q) => {
-    const estimatedAmountUSD = new Decimal(tokenPrice ?? "0").mul(
+    const estimatedAmountUSD = new Decimal(tokenPrice).mul(
       formatUnits(BigInt(q.estimatedAmount), to.token!.decimals),
     );
 
-    const estimatedAmountAfterFeesUSD = new Decimal(gasTokenPrice ?? "0").mul(
-      formatUnits(BigInt(q.estimatedAmount), to.token!.decimals),
-    );
+    const gasFeesUSD = new Decimal(gasTokenPrice)
+      .mul(gasPrice?.toString())
+      .mul(q.gasEstimate)
+      .div(1e18);
+
+    const estimatedAmountAfterFeesUSD = estimatedAmountUSD
+      .sub(gasFeesUSD)
+      .toFixed(6);
 
     return {
       ...q,
       estimatedAmountUSD: estimatedAmountUSD.toDecimalPlaces(2).toString(),
-      estimatedAmountAfterFeesUSD: "0",
+      estimatedAmountAfterFeesUSD,
     };
   });
 
-  console.log({ quotesWithAmount });
   const sortedQuotes = quotesWithAmount.sort(
     (a, b) =>
       parseFloat(b.estimatedAmountAfterFeesUSD || "0") -
