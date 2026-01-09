@@ -54,7 +54,7 @@ export class RelayAdapter extends BaseAdapter {
     return {
       adapter: { name: this.name, logo: this.logo },
       tokenApprovalAddress: isEOA ? undefined : dataTx.to,
-      estimatedFee: totalFees,
+      estimatedFeeUSD: totalFees,
       estimatedTime: data?.details?.timeEstimate || 0,
       estimatedAmount: data?.details?.currencyOut?.amount || "0",
       txRequest: {

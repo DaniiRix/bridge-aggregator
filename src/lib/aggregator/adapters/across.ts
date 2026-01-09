@@ -39,7 +39,7 @@ export class AcrossAdapter extends BaseAdapter {
     return {
       adapter: { name: this.name, logo: this.logo },
       tokenApprovalAddress: data?.checks.allowance.spender,
-      estimatedFee: data.fees?.total?.amountUsd || "0",
+      estimatedFeeUSD: data.fees?.total?.amountUsd || "0",
       estimatedTime: data.expectedFillTime || 0,
       estimatedAmount: data.expectedOutputAmount || "0",
       txRequest: {

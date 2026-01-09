@@ -157,13 +157,13 @@ export const BridgeAction = () => {
       await approveTokenMutation();
     }
 
-    const selectedRoute = quotes.find(
+    const selectedQuote = quotes.find(
       (q) => q.adapter.name === selectedAdapter,
     );
-    if (!selectedRoute) return;
+    if (!selectedQuote) return;
 
     const hex = await sendBridgeTransaction({
-      ...selectedRoute.txRequest,
+      ...selectedQuote.txRequest,
       chainId: from.chain!.id,
     });
 

@@ -32,9 +32,7 @@ export class BridgeAggregator {
       }
     }
 
-    return quotes.sort((a, b) =>
-      BigInt(a.estimatedAmount || 0) > BigInt(b.estimatedAmount || 0) ? 1 : -1,
-    );
+    return quotes;
   }
 
   private async getQuote(

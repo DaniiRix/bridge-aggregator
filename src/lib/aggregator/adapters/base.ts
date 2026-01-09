@@ -12,7 +12,7 @@ export interface QuoteRequest {
 export interface Quote {
   adapter: { name: string; logo: string };
   tokenApprovalAddress?: Hex;
-  estimatedFee: string;
+  estimatedFeeUSD: string;
   estimatedTime: number;
   estimatedAmount: string;
   txRequest: {
@@ -20,6 +20,11 @@ export interface Quote {
     data: Hex;
     value?: bigint;
   };
+}
+
+export interface QuoteWithAmount extends Quote {
+  estimatedAmountUSD: string;
+  estimatedAmountAfterFeesUSD: string;
 }
 
 export abstract class BaseAdapter {
