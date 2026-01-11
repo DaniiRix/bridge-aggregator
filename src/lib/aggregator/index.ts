@@ -1,3 +1,4 @@
+import type { Hex } from "viem";
 import type { BaseAdapter, Quote, QuoteRequest } from "./adapters/base";
 
 export interface AggregatorConfig {
@@ -16,6 +17,18 @@ export class BridgeAggregator {
     this.config = {
       timeout: config.timeout ?? 10000,
     };
+  }
+
+  async generateTokenList() {
+    const promises = Array.from(this.adapters.values()).map((adapter) => {
+      if (adapter.generateTokenList) {
+        return adapter.generateTokenList();
+      }
+
+      return Promise.resolve();
+    });
+
+    await Promise.all(promises);
   }
 
   async getQuotes(request: QuoteRequest): Promise<Quote[]> {
@@ -37,6 +50,17 @@ export class BridgeAggregator {
     return quotes;
   }
 
+  async postBridge(quote: Quote, srcTxHash: Hex): Promise<void> {
+    const adapter = this.adapters.get(quote.adapter.name);
+    if (!adapter) throw new Error("Adapter not found");
+
+    if (adapter?.postBridge) {
+      return await adapter.postBridge(quote, srcTxHash);
+    }
+
+    return Promise.resolve();
+  }
+
   private async getQuote(
     adapter: BaseAdapter,
     request: QuoteRequest,
@@ -45,10 +69,7 @@ export class BridgeAggregator {
   > {
     try {
       if (adapter.supportsRoute) {
-        const supported = await this.withTimeout(
-          adapter.supportsRoute(request),
-          this.config.timeout,
-        );
+        const supported = adapter.supportsRoute(request);
 
         if (!supported) {
           return {

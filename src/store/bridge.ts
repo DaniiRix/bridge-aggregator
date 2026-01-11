@@ -39,14 +39,19 @@ export type BridgeActions = {
   setToChain: (chain: Chain) => void;
   setToToken: (token: Token) => void;
   setToAmount: (amount: string) => void;
+  reset: () => void;
 };
 
 export type BridgeStore = BridgeState & BridgeActions;
 
 export const defaultInitState: BridgeState = {
   isPrivacyEnabled: false,
-  from: {},
-  to: {},
+  from: {
+    amount: "",
+  },
+  to: {
+    amount: "",
+  },
 };
 
 export const createBridgeStore = (
@@ -76,5 +81,6 @@ export const createBridgeStore = (
     setToToken: (token) =>
       set((state) => ({ to: { ...state.to, token, amount: "" } })),
     setToAmount: (amount) => set((state) => ({ to: { ...state.to, amount } })),
+    reset: () => set(defaultInitState),
   }));
 };

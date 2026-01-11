@@ -21,6 +21,7 @@ export interface Quote {
     data: Hex;
     value?: bigint;
   };
+  extraData?: Record<string, any>;
 }
 
 export interface QuoteWithAmount extends Quote {
@@ -36,5 +37,8 @@ export abstract class BaseAdapter {
 
   abstract getQuote(request: QuoteRequest): Promise<Quote>;
 
-  supportsRoute?(request: QuoteRequest): Promise<boolean>;
+  postBridge?(quote: Quote, srcTxHash: Hex): Promise<void>;
+
+  generateTokenList?(): Promise<void>;
+  supportsRoute?(request: QuoteRequest): boolean;
 }

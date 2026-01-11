@@ -13,7 +13,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
-import { useQuote } from "@/hooks/use-quote";
+import { bridgeAggregator, useQuote } from "@/hooks/use-quote";
 import { wagmiConfig } from "@/lib/providers";
 import { useBridge } from "@/lib/providers/bridge-store";
 import { toaster } from "./ui/toaster";
@@ -37,7 +37,7 @@ export const BridgeAction = () => {
       },
     });
 
-  const { selectedAdapter, from, to } = useBridge((state) => state);
+  const { selectedAdapter, from, to, reset } = useBridge((state) => state);
   const { data: { quotes = [] } = {}, isLoading: areQuotesLoading } =
     useQuote();
 
@@ -142,10 +142,10 @@ export const BridgeAction = () => {
   const handleBridge = useCallback(async () => {
     if (isDisabled) return;
 
-    if (chainId !== from.chain!.id) {
+    if (chainId !== from.chain?.id) {
       try {
         await switchChainAsync({ chainId: from.chain!.id });
-      } catch (error) {
+      } catch {
         toaster.create({
           title: "Failed to switch chain",
           type: "error",
@@ -169,22 +169,27 @@ export const BridgeAction = () => {
 
     const hex = await sendBridgeTransaction({
       ...selectedQuote.txRequest,
-      chainId: from.chain!.id,
+      chainId: from.chain?.id,
     });
 
-    await waitForTransactionReceipt(wagmiConfig, {
-      hash: hex,
-    });
+    await Promise.all([
+      waitForTransactionReceipt(wagmiConfig, {
+        hash: hex,
+      }),
+      bridgeAggregator.postBridge(selectedQuote, hex),
+    ]);
 
     addRecentTransaction({
       hash: hex,
-      description: `Bridged ${from.token!.symbol} to ${to.token!.symbol} via ${selectedAdapter}`,
+      description: `Bridged ${from.token?.symbol} to ${to.token?.symbol} via ${selectedAdapter}`,
     });
 
     toaster.create({
       title: "Bridge successful",
       type: "success",
     });
+
+    reset();
   }, [
     isDisabled,
     chainId,
@@ -197,6 +202,7 @@ export const BridgeAction = () => {
     addRecentTransaction,
     approveTokenMutation,
     sendBridgeTransaction,
+    reset,
   ]);
 
   if (!address)
