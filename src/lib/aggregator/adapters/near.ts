@@ -57,7 +57,6 @@ export class NearAdapter extends BaseAdapter {
     }
 
     try {
-      // @ts-expect-error
       const routes = await import("../../../data/near.json");
       this.nearRoutes = routes.default || routes;
       return this.nearRoutes || [];
@@ -71,6 +70,7 @@ export class NearAdapter extends BaseAdapter {
   async supportsRoute(request: QuoteRequest): Promise<boolean> {
     const { srcChainId, dstChainId, inputToken, outputToken } = request;
     const routes = await this.getNearRoutes();
+    if (!routes || routes.length === 0) return true;
 
     const isInputSupported = routes.some(
       (route) =>
