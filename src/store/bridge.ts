@@ -1,4 +1,4 @@
-import { createStore } from "zustand/vanilla";
+import { create } from "zustand";
 
 export interface Token {
   chainId: number;
@@ -57,35 +57,31 @@ export const defaultInitState: BridgeState = {
   },
 };
 
-export const createBridgeStore = (
-  initState: BridgeState = defaultInitState,
-) => {
-  return createStore<BridgeStore>()((set) => ({
-    ...initState,
-    togglePrivacy: (checked) => set(() => ({ isPrivacyEnabled: checked })),
-    toggleRoutes: () =>
-      set((state) => ({ areRoutesVisible: !state.areRoutesVisible })),
-    selectAdapter: (adapter) => set(() => ({ selectedAdapter: adapter })),
-    setFromChain: (chain) =>
-      set((state) => ({
-        from: { ...state.from, chain },
-        to: { ...state.to, amount: "" },
-      })),
-    setFromToken: (token) =>
-      set((state) => ({
-        from: { ...state.from, token },
-        to: { ...state.to, amount: "" },
-      })),
-    setFromAmount: (amount) =>
-      set((state) => ({
-        from: { ...state.from, amount },
-        to: { ...state.to, amount: "" },
-      })),
-    setToChain: (chain) =>
-      set((state) => ({ to: { ...state.to, chain, amount: "" } })),
-    setToToken: (token) =>
-      set((state) => ({ to: { ...state.to, token, amount: "" } })),
-    setToAmount: (amount) => set((state) => ({ to: { ...state.to, amount } })),
-    reset: () => set(defaultInitState),
-  }));
-};
+export const useBridge = create<BridgeStore>()((set) => ({
+  ...defaultInitState,
+  togglePrivacy: (checked) => set(() => ({ isPrivacyEnabled: checked })),
+  toggleRoutes: () =>
+    set((state) => ({ areRoutesVisible: !state.areRoutesVisible })),
+  selectAdapter: (adapter) => set(() => ({ selectedAdapter: adapter })),
+  setFromChain: (chain) =>
+    set((state) => ({
+      from: { ...state.from, chain },
+      to: { ...state.to, amount: "" },
+    })),
+  setFromToken: (token) =>
+    set((state) => ({
+      from: { ...state.from, token },
+      to: { ...state.to, amount: "" },
+    })),
+  setFromAmount: (amount) =>
+    set((state) => ({
+      from: { ...state.from, amount },
+      to: { ...state.to, amount: "" },
+    })),
+  setToChain: (chain) =>
+    set((state) => ({ to: { ...state.to, chain, amount: "" } })),
+  setToToken: (token) =>
+    set((state) => ({ to: { ...state.to, token, amount: "" } })),
+  setToAmount: (amount) => set((state) => ({ to: { ...state.to, amount } })),
+  reset: () => set(defaultInitState),
+}));

@@ -1,6 +1,7 @@
 import type { Hex } from "viem";
 
 export interface QuoteRequest {
+  slippagePercent: number;
   srcChainId: number;
   dstChainId: number;
   inputToken: string;

@@ -4,7 +4,7 @@ import { CheckCircle2Icon, ClockIcon, ExternalLinkIcon } from "lucide-react";
 import { formatUnits } from "viem";
 import { AggIcons, LlamaIcon } from "@/components/icons";
 import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
-import { useBridge } from "@/lib/providers/bridge-store";
+import { useBridge } from "@/store/bridge";
 import { formatNumber } from "@/utils/number";
 import { RefreshQuotes } from "./refresh";
 import { TokenWithChainLogo } from "./ui/dual-token";
@@ -18,7 +18,7 @@ export const RouteList = ({
   lastFetchedQuotesAt: number;
   refetchQuotes: () => void;
 }) => {
-  const { selectedAdapter, to, selectAdapter } = useBridge((state) => state);
+  const { selectedAdapter, to, selectAdapter } = useBridge();
 
   return (
     <VStack gap={2}>

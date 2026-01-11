@@ -15,7 +15,7 @@ import {
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { bridgeAggregator, useQuote } from "@/hooks/use-quote";
 import { wagmiConfig } from "@/lib/providers";
-import { useBridge } from "@/lib/providers/bridge-store";
+import { useBridge } from "@/store/bridge";
 import { toaster } from "./ui/toaster";
 
 export const BridgeAction = () => {

@@ -10,8 +10,9 @@ import type {
 } from "@/lib/aggregator/adapters/base";
 import { NearAdapter } from "@/lib/aggregator/adapters/near";
 import { RelayAdapter } from "@/lib/aggregator/adapters/relay";
-import { useBridge } from "@/lib/providers/bridge-store";
 import type { BridgeState } from "@/store/bridge";
+import { useBridge } from "@/store/bridge";
+import { useSlippage } from "@/store/slippage";
 import { useDebounce } from "./use-debounce";
 import { useTokensPrice } from "./use-token-price";
 
@@ -26,12 +27,12 @@ export const QUOTES_REFETCH_TIME_MS = 25_000;
 
 export const useQuote = () => {
   const { address } = useConnection();
-  const { from, to } = useBridge((state) => state);
+
+  const { slippagePercent } = useSlippage((state) => state);
+  const { from, to } = useBridge();
 
   const debouncedAmount = useDebounce(from.amount, 500);
-
   const { data: { toTokenPrice, gasTokenPrice } = {} } = useTokensPrice();
-
   const { data: gasPrice } = useGasPrice({
     chainId: from.chain?.id,
   });
@@ -51,6 +52,7 @@ export const useQuote = () => {
         from,
         to,
         debouncedAmount,
+        slippagePercent,
         toTokenPrice,
         gasTokenPrice,
         gasPrice,
@@ -75,6 +77,7 @@ const getQuotes = async (
   from?: BridgeState["from"],
   to?: BridgeState["to"],
   debouncedAmount?: string,
+  slippagePercent?: number,
   tokenPrice?: string,
   gasTokenPrice?: string,
   gasPrice?: bigint,
@@ -84,6 +87,7 @@ const getQuotes = async (
     !from?.chain ||
     !from?.token ||
     !debouncedAmount ||
+    !slippagePercent ||
     !parseFloat(debouncedAmount) ||
     !to?.chain ||
     !to?.token ||
@@ -95,6 +99,7 @@ const getQuotes = async (
 
   const warnings: string[] = []; // @todo
   const request: QuoteRequest = {
+    slippagePercent,
     srcChainId: from.chain.id,
     dstChainId: to.chain.id,
     inputToken: getAddress(from.token.address),

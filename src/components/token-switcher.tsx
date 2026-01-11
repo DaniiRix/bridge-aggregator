@@ -27,8 +27,8 @@ import {
 } from "@/hooks/use-token-balance";
 import { useTokens } from "@/hooks/use-tokens";
 import { allChains, type WagmiChain } from "@/lib/chains";
-import { useBridge } from "@/lib/providers/bridge-store";
 import type { Token } from "@/store/bridge";
+import { useBridge } from "@/store/bridge";
 import { titleCase, truncate, truncateAddress } from "@/utils/string";
 import { TokensSkeleton } from "./skeleton/token-switch";
 import { TokenWithChainLogo } from "./ui/dual-token";
@@ -38,7 +38,7 @@ const TOKEN_ROW_HEIGHT = 56;
 const MAX_LIST_HEIGHT = 500;
 
 export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
-  const { from, to, setFromChain, setToChain } = useBridge((state) => state);
+  const { from, to, setFromChain, setToChain } = useBridge();
 
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -250,7 +250,7 @@ const TokensList = ({
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const { from, to } = useBridge((state) => state);
+  const { from, to } = useBridge();
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const { data: tokens = [], isLoading: isTokenLoading } = useTokens(
@@ -407,7 +407,7 @@ const TokenRow = ({
   selectedTokenAddress?: string;
   closeDialog: () => void;
 }) => {
-  const { setFromToken, setToToken } = useBridge((state) => state);
+  const { setFromToken, setToToken } = useBridge();
 
   const handleTokenSelect = useCallback(
     (token: Token) => {

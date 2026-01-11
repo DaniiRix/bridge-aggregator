@@ -24,7 +24,7 @@ import { TokenSwitcher } from "@/components/token-switcher";
 import { useQuote } from "@/hooks/use-quote";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useTokensPrice } from "@/hooks/use-token-price";
-import { useBridge } from "@/lib/providers/bridge-store";
+import { useBridge } from "@/store/bridge";
 import { formatNumber, isInputGreaterThanDecimals } from "@/utils/number";
 import { normalizeAddress } from "@/utils/string";
 import { Tooltip } from "../components/ui/tooltip";
@@ -44,7 +44,7 @@ export default function BridgeAggregatorPage() {
     toggleRoutes,
     setFromAmount,
     setToAmount,
-  } = useBridge((state) => state);
+  } = useBridge();
 
   const { data: tokensWithBalanceOnFromChain } = useTokenBalance(
     from.chain?.id,
@@ -392,14 +392,16 @@ export default function BridgeAggregatorPage() {
 
             <BridgeAction />
 
-            <Flex w="100%" gap={2} align="center" justify="space-between">
-              <Text fontSize="xs" color="gray.200" display="flex" gap={1}>
-                1 {from?.token?.symbol} = 1.01023 {to?.token?.symbol}{" "}
-                <Text color="gray.400">($1.00)</Text>
-              </Text>
+            {/* {quotes.length > 0 && (
+              <Flex w="100%" gap={2} align="center" justify="space-between">
+                <Text fontSize="xs" color="gray.200" display="flex" gap={1}>
+                  1 {from?.token?.symbol} = 1.01023 {to?.token?.symbol}{" "}
+                  <Text color="gray.400">($1.00)</Text>
+                </Text>
 
-              <SlippageSettings />
-            </Flex>
+                <SlippageSettings />
+              </Flex>
+            )} */}
           </VStack>
         </Box>
 

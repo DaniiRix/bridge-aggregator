@@ -15,7 +15,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { allChains } from "../chains";
 import { rpcsTransports } from "../rpcs";
 import { themeConfig } from "../theme";
-import { BridgeStoreProvider } from "./bridge-store";
 
 export const wagmiConfig = getDefaultConfig({
   appName: "LlamaBridge",
@@ -39,7 +38,7 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
                 borderRadius: "medium",
               })}
             >
-              <BridgeStoreProvider>{children}</BridgeStoreProvider>
+              {children}
               <Toaster />
               <Breakpoints />
             </RainbowKitProvider>

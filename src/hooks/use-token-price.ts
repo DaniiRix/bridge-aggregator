@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { zeroAddress } from "viem";
 import { fetchPrices } from "@/lib/actions/token";
 import { chainIdToName } from "@/lib/constants/chains";
-import { useBridge } from "@/lib/providers/bridge-store";
 import type { Token } from "@/store/bridge";
+import { useBridge } from "@/store/bridge";
 
 const STALE_TIME_MS = 60_000;
 
 export const useTokensPrice = () => {
-  const { from, to } = useBridge((state) => state);
+  const { from, to } = useBridge();
 
   return useQuery<{
     fromTokenPrice: string;
