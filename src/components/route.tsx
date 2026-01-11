@@ -88,7 +88,7 @@ export const RouteList = ({ quotes }: { quotes: QuoteWithAmount[] }) => {
                   fontSize="sm"
                   color={qIdx !== 0 ? "red.500" : ""}
                 >
-                  {qIdx === 0 ? "BEST" : `${lossPercent}%`}
+                  {qIdx === 0 ? "BEST" : `-${lossPercent}%`}
                 </Text>
                 <Flex
                   fontWeight="medium"

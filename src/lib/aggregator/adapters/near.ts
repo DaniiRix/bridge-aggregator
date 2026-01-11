@@ -1,0 +1,205 @@
+// Get partner api key from here: https://partners.near-intents.org to avoid 0.1% fee
+
+// import { writeFile } from "node:fs/promises";
+// import path from "node:path";
+import { encodeFunctionData, erc20Abi, type Hex } from "viem";
+import { estimateGas } from "wagmi/actions";
+import { wagmiConfig } from "@/lib/providers";
+import nearRoutes from "../../../data/near.json";
+import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
+
+export class NearAdapter extends BaseAdapter {
+  apiKey = "YOUR_SECRET_TOKEN";
+  apiEndpoint = "https://1click.chaindefuser.com";
+  referrer = "defillama.com";
+  tokenListFile = "src/data/near.json";
+
+  constructor() {
+    super("near", "https://icons.llamao.fi/icons/protocols/near?w=48&q=75");
+  }
+
+  // async generateTokenList() {
+  //   const res = await fetch(`${this.apiEndpoint}/v0/tokens`);
+  //   if (!res.ok) {
+  //     const errorData = await res.json().catch(() => ({}));
+  //     throw new Error(
+  //       `[NearAdapter] Error fetching token list: ${errorData.message || res.statusText}`,
+  //     );
+  //   }
+
+  //   const data = await res.json();
+
+  //   await writeFile(
+  //     path.join(process.cwd(), this.tokenListFile),
+  //     JSON.stringify(data, null, 2),
+  //   );
+  // }
+
+  supportsRoute(request: QuoteRequest): boolean {
+    const { srcChainId, dstChainId, inputToken, outputToken } = request;
+
+    const isInputSupported = nearRoutes.some(
+      (route) =>
+        route.contractAddress?.toLowerCase() === inputToken.toLowerCase() &&
+        route.blockchain === this.chainIdToName(srcChainId),
+    );
+    if (!isInputSupported) return false;
+
+    const isOutputSupported = nearRoutes.some(
+      (route) =>
+        route.contractAddress?.toLowerCase() === outputToken.toLowerCase() &&
+        route.blockchain === this.chainIdToName(dstChainId),
+    );
+    return isOutputSupported;
+  }
+
+  async getQuote(request: QuoteRequest): Promise<Quote> {
+    const { srcChainId, dstChainId, inputToken, outputToken, sender, amount } =
+      request;
+
+    const inputTokenAssetId = this.getAssetId(srcChainId, inputToken);
+    const outputTokenAssetId = this.getAssetId(dstChainId, outputToken);
+
+    const deadline = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
+
+    const res = await fetch(`${this.apiEndpoint}/v0/quote`, {
+      method: "POST",
+      headers: {
+        // Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dry: false,
+        depositMode: "SIMPLE",
+        swapType: "EXACT_INPUT",
+        slippageTolerance: 100, // 1%
+        originAsset: inputTokenAssetId,
+        depositType: "ORIGIN_CHAIN",
+        destinationAsset: outputTokenAssetId,
+        amount,
+        refundTo: sender,
+        refundType: "ORIGIN_CHAIN",
+        recipient: sender,
+        recipientType: "DESTINATION_CHAIN",
+        deadline,
+        referral: this.referrer,
+        quoteWaitingTimeMs: 3000,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      console.log({ errorData });
+      throw new Error(
+        `[Relay] Error fetching quote: ${errorData.message || res.statusText}`,
+      );
+    }
+
+    const data = await res.json();
+    const quote = data?.quote;
+
+    const encodedFnData = encodeFunctionData({
+      abi: erc20Abi,
+      functionName: "transfer",
+      args: [quote?.depositAddress, quote?.amountIn],
+    });
+
+    const estimatedGas = await estimateGas(wagmiConfig, {
+      chainId: srcChainId,
+      account: sender,
+      to: quote?.depositAddress,
+      data: encodedFnData,
+    });
+
+    const amountInUsd = Number(quote?.amountInUsd) || 0;
+    const amountOutUsd = Number(quote?.amountOutUsd) || 0;
+    const estimatedFeeUSD = (amountInUsd - amountOutUsd).toFixed(4);
+
+    return {
+      adapter: { name: this.name, logo: this.logo },
+      tokenApprovalAddress: undefined,
+      estimatedFeeUSD,
+      estimatedTime: quote?.timeEstimate || 0,
+      estimatedAmount: quote?.amountOut || "0",
+      gasEstimate: estimatedGas?.toString() || "0",
+      txRequest: {
+        to: inputToken as Hex,
+        data: encodedFnData,
+      },
+      extraData: {
+        depositAddress: quote?.depositAddress,
+      },
+    };
+  }
+
+  async postBridge(quote: Quote, srcTxHash: Hex): Promise<void> {
+    const res = await fetch(`${this.apiEndpoint}/v0/deposit/submit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        txHash: srcTxHash,
+        depositAddress: quote.extraData?.depositAddress,
+      }),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(
+        `[Near] Error submitting deposit transaction: ${errorData.message || res.statusText}`,
+      );
+    }
+  }
+
+  private chainIdToName(chainId: number): string {
+    switch (chainId) {
+      case 1:
+        return "eth";
+      case 56:
+        return "bsc";
+      case 137:
+        return "pol";
+      case 42161:
+        return "arb";
+      case 10:
+        return "op";
+      case 8453:
+        return "base";
+      case 43114:
+        return "avax";
+      case 100:
+        return "gnosis";
+      case 59144:
+        return "linea";
+      case 534352:
+        return "scroll";
+      case 324:
+        return "zksync";
+      case 80094:
+        return "bera";
+      case 143:
+        return "monad";
+      default:
+        return "unknown";
+    }
+  }
+
+  private getAssetId(chainId: number, address: string): string {
+    const chainName = this.chainIdToName(chainId);
+
+    const assetId = nearRoutes.find(
+      (route) =>
+        route.contractAddress?.toLowerCase() === address.toLowerCase() &&
+        route.blockchain === chainName,
+    )?.assetId;
+
+    if (!assetId) {
+      throw new Error(
+        `Asset not found for chain ${chainName} and address ${address}`,
+      );
+    }
+
+    return assetId;
+  }
+}

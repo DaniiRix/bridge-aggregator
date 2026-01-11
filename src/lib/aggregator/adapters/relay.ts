@@ -55,6 +55,7 @@ export class RelayAdapter extends BaseAdapter {
 
     const estimatedGas = await estimateGas(wagmiConfig, {
       chainId: srcChainId,
+      account: sender,
       to: dataTx.to,
       data: dataTx.data,
       value: dataTx.value ? BigInt(dataTx.value) : undefined,

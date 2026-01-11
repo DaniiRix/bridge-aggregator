@@ -8,17 +8,19 @@ import type {
   QuoteRequest,
   QuoteWithAmount,
 } from "@/lib/aggregator/adapters/base";
+import { NearAdapter } from "@/lib/aggregator/adapters/near";
 import { RelayAdapter } from "@/lib/aggregator/adapters/relay";
 import { useBridge } from "@/lib/providers/bridge-store";
 import type { BridgeState } from "@/store/bridge";
 import { useDebounce } from "./use-debounce";
 import { useTokensPrice } from "./use-token-price";
 
-const acrossAdapter = new AcrossAdapter();
-const relayAdapter = new RelayAdapter();
-const aggregator = new BridgeAggregator([acrossAdapter, relayAdapter], {
-  timeout: 5000,
-});
+export const bridgeAggregator = new BridgeAggregator(
+  [new AcrossAdapter(), new RelayAdapter(), new NearAdapter()],
+  {
+    timeout: 10000,
+  },
+);
 
 const STALE_TIME_MS = 25_000;
 
@@ -101,7 +103,7 @@ const getQuotes = async (
     amount: parseUnits(debouncedAmount, from.token.decimals).toString(),
   };
 
-  const quotes = await aggregator.getQuotes(request);
+  const quotes = await bridgeAggregator.getQuotes(request);
   console.log({ quotes });
 
   const quotesWithAmount: QuoteWithAmount[] = quotes.map((q) => {
