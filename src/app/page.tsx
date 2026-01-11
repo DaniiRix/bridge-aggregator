@@ -50,6 +50,8 @@ export default function BridgeAggregatorPage() {
     data: { quotes = [], warnings = [] } = {},
     isLoading: areQuotesLoading,
     isSuccess,
+    refetch: refetchQuotes,
+    dataUpdatedAt: lastFetchedQuotesAt,
   } = useQuote();
 
   const routesRef = useRef(null);
@@ -137,7 +139,13 @@ export default function BridgeAggregatorPage() {
       return <RouteNotSelected />;
     }
 
-    return <RouteList quotes={quotes} />;
+    return (
+      <RouteList
+        quotes={quotes}
+        lastFetchedQuotesAt={lastFetchedQuotesAt}
+        refetchQuotes={refetchQuotes}
+      />
+    );
   };
 
   return (

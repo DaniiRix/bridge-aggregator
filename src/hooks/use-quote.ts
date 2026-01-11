@@ -22,7 +22,7 @@ export const bridgeAggregator = new BridgeAggregator(
   },
 );
 
-const STALE_TIME_MS = 25_000;
+export const QUOTES_REFETCH_TIME_MS = 25_000;
 
 export const useQuote = () => {
   const { address } = useConnection();
@@ -63,8 +63,8 @@ export const useQuote = () => {
         to.token &&
         debouncedAmount,
     ),
-    staleTime: STALE_TIME_MS,
-    refetchInterval: STALE_TIME_MS,
+    staleTime: QUOTES_REFETCH_TIME_MS,
+    refetchInterval: QUOTES_REFETCH_TIME_MS,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });

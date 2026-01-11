@@ -6,19 +6,37 @@ import { AggIcons, LlamaIcon } from "@/components/icons";
 import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
 import { useBridge } from "@/lib/providers/bridge-store";
 import { formatNumber } from "@/utils/number";
+import { RefreshQuotes } from "./refresh";
 import { TokenWithChainLogo } from "./ui/dual-token";
 
-export const RouteList = ({ quotes }: { quotes: QuoteWithAmount[] }) => {
+export const RouteList = ({
+  quotes,
+  lastFetchedQuotesAt,
+  refetchQuotes,
+}: {
+  quotes: QuoteWithAmount[];
+  lastFetchedQuotesAt: number;
+  refetchQuotes: () => void;
+}) => {
   const { selectedAdapter, to, selectAdapter } = useBridge((state) => state);
 
   return (
     <VStack gap={2}>
-      <Text fontSize="lg" fontWeight="semibold" color="white" w="100%">
-        Select a route
-      </Text>
-      <Text fontSize="sm" color="gray.400/80" w="100%">
-        Best route is selected based on net output after gas fees.
-      </Text>
+      <HStack align="center" gap={2}>
+        <Flex direction="column" flex={1} gap={2}>
+          <Text fontSize="lg" fontWeight="semibold" color="white" w="100%">
+            Select a route
+          </Text>
+          <Text fontSize="sm" color="gray.400/80" w="100%">
+            Best route is selected based on net output after gas fees.
+          </Text>
+        </Flex>
+
+        <RefreshQuotes
+          refetch={refetchQuotes}
+          lastFetched={lastFetchedQuotesAt}
+        />
+      </HStack>
 
       {quotes?.map((q, qIdx) => {
         const lossPercent = new Decimal(quotes[0].estimatedAmountAfterFeesUSD)
