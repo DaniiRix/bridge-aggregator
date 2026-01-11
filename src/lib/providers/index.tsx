@@ -32,7 +32,12 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
       <DarkMode>
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
-            <RainbowKitProvider theme={darkTheme()}>
+            <RainbowKitProvider
+              theme={darkTheme({
+                accentColor: "#2563eb",
+                borderRadius: "medium",
+              })}
+            >
               <BridgeStoreProvider>{children}</BridgeStoreProvider>
               <Toaster />
             </RainbowKitProvider>
