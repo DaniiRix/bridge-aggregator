@@ -9,6 +9,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { WagmiProvider } from "wagmi";
+import { Breakpoints } from "@/components/breakpoints";
 import { DarkMode } from "@/components/ui/color-mode";
 import { Toaster } from "@/components/ui/toaster";
 import { allChains } from "../chains";
@@ -40,6 +41,7 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
             >
               <BridgeStoreProvider>{children}</BridgeStoreProvider>
               <Toaster />
+              <Breakpoints />
             </RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>

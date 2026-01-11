@@ -17,6 +17,7 @@ export interface Chain {
 
 export type BridgeState = {
   isPrivacyEnabled: boolean;
+  areRoutesVisible: boolean;
   selectedAdapter?: string;
   from: {
     chain?: Chain;
@@ -32,6 +33,7 @@ export type BridgeState = {
 
 export type BridgeActions = {
   togglePrivacy: (checked: boolean) => void;
+  toggleRoutes: () => void;
   selectAdapter: (adapter: string) => void;
   setFromChain: (chain: Chain) => void;
   setFromToken: (token: Token) => void;
@@ -46,6 +48,7 @@ export type BridgeStore = BridgeState & BridgeActions;
 
 export const defaultInitState: BridgeState = {
   isPrivacyEnabled: false,
+  areRoutesVisible: false,
   from: {
     amount: "",
   },
@@ -60,6 +63,8 @@ export const createBridgeStore = (
   return createStore<BridgeStore>()((set) => ({
     ...initState,
     togglePrivacy: (checked) => set(() => ({ isPrivacyEnabled: checked })),
+    toggleRoutes: () =>
+      set((state) => ({ areRoutesVisible: !state.areRoutesVisible })),
     selectAdapter: (adapter) => set(() => ({ selectedAdapter: adapter })),
     setFromChain: (chain) =>
       set((state) => ({

@@ -31,6 +31,7 @@ export default function RootLayout({
             maxW="100%"
             minH="100vh"
             bgColor="bg.1"
+            position="relative"
           >
             <Navbar />
             {children}

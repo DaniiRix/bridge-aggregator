@@ -12,7 +12,8 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import Decimal from "decimal.js-light";
-import { InfoIcon } from "lucide-react";
+import { ArrowLeft, InfoIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 import { formatUnits } from "viem";
 import { BridgeAction } from "@/components/bridge-action";
@@ -27,14 +28,19 @@ import { formatNumber, isInputGreaterThanDecimals } from "@/utils/number";
 import { normalizeAddress } from "@/utils/string";
 import { Tooltip } from "../components/ui/tooltip";
 
+const MotionBox = motion(Box);
+const MotionVStack = motion(VStack);
+
 export default function BridgeAggregatorPage() {
   const switchPrivacyId = useId();
 
   const {
     isPrivacyEnabled,
+    areRoutesVisible,
     from,
     to,
     togglePrivacy,
+    toggleRoutes,
     setFromAmount,
     setToAmount,
   } = useBridge((state) => state);
@@ -54,7 +60,6 @@ export default function BridgeAggregatorPage() {
     dataUpdatedAt: lastFetchedQuotesAt,
   } = useQuote();
 
-  const routesRef = useRef(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const userTokensBalance = useMemo(() => {
@@ -122,11 +127,24 @@ export default function BridgeAggregatorPage() {
           <Text fontSize="sm" color="gray.400/80" w="100%">
             Best route is selected based on net output after gas fees.
           </Text>
-          <QuoteSkeleton />
-          <QuoteSkeleton />
-          <QuoteSkeleton />
-          <QuoteSkeleton />
-          <QuoteSkeleton />
+          <AnimatePresence mode="wait">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <MotionBox
+                key={`skeleton-${i}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{
+                  duration: 0.3,
+                  delay: i * 0.05,
+                  ease: "easeOut",
+                }}
+                w="100%"
+              >
+                <QuoteSkeleton />
+              </MotionBox>
+            ))}
+          </AnimatePresence>
         </VStack>
       );
     }
@@ -152,15 +170,15 @@ export default function BridgeAggregatorPage() {
     <Container
       maxW="100%"
       minH="100%"
-      mt={{ lg: 10 }}
+      mt={{ base: 5, lg: 10 }}
       py={{ base: 4, md: 9 }}
       px={{ base: 4, md: 6 }}
     >
       <Flex
-        direction={{ base: "column", lg: "row" }}
+        direction="row"
         gap={6}
         justify="center"
-        align={{ base: "stretch", lg: "flex-start" }}
+        align="flex-stretch"
         w="100%"
         position="relative"
       >
@@ -171,10 +189,7 @@ export default function BridgeAggregatorPage() {
           border="1px solid"
           borderColor="gray.700"
           p={4}
-          boxShadow={{ base: "none", md: "dark-lg" }}
-          position={{ base: "relative", lg: "sticky" }}
-          top={{ lg: 6 }}
-          alignSelf="flex-start"
+          position="relative"
         >
           <VStack gap={5} align="stretch">
             <Flex align="center">
@@ -337,31 +352,70 @@ export default function BridgeAggregatorPage() {
             </Box>
 
             {warnings?.length > 0 && (
-              <VStack gap={2} display={{ base: "none", md: "flex" }}>
-                {warnings.map((warning) => (
-                  <Box
-                    key={warning}
-                    w="100%"
-                    bg="yellow.200/10"
-                    p={2}
-                    borderRadius="lg"
-                  >
-                    <Flex align="center" gap={2}>
-                      <InfoIcon color="#ECC94B" size={16} />
-                      <Text fontSize="xs" color="yellow.400">
-                        {warning}
-                      </Text>
-                    </Flex>
-                  </Box>
-                ))}
-              </VStack>
+              <MotionVStack
+                gap={2}
+                display={{ base: "none", md: "flex" }}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <AnimatePresence mode="popLayout">
+                  {warnings.map((warning, i) => (
+                    <MotionBox
+                      key={warning}
+                      w="100%"
+                      bg="yellow.200/10"
+                      p={2}
+                      borderRadius="lg"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{
+                        duration: 0.25,
+                        delay: i * 0.05,
+                        ease: "easeOut",
+                      }}
+                    >
+                      <Flex align="center" gap={2}>
+                        <InfoIcon color="#ECC94B" size={16} />
+                        <Text fontSize="xs" color="yellow.400">
+                          {warning}
+                        </Text>
+                      </Flex>
+                    </MotionBox>
+                  ))}
+                </AnimatePresence>
+              </MotionVStack>
             )}
 
             <BridgeAction />
           </VStack>
         </Box>
 
-        <Box
+        <Button
+          display={{ base: areRoutesVisible ? "flex" : "none", lg: "none" }}
+          position="absolute"
+          top="-5%"
+          zIndex={10}
+          left="50%"
+          transform="translateX(-50%)"
+          gap={1}
+          fontSize="xs"
+          color="gray.400"
+          variant="ghost"
+          p={0}
+          height="fit-content"
+          bg={{ _hover: "none" }}
+          onClick={toggleRoutes}
+        >
+          <ArrowLeft size={18} />
+          <Text fontSize="sm" fontWeight="medium">
+            Back
+          </Text>
+        </Button>
+
+        <MotionBox
           w="100%"
           h="100%"
           maxW="30rem"
@@ -370,21 +424,34 @@ export default function BridgeAggregatorPage() {
           border="1px solid"
           borderColor="gray.700"
           p={4}
-          boxShadow={{ base: "none", md: "dark-lg" }}
-          position={{ base: "absolute", md: "relative" }}
-          top={{ base: 0, md: "auto" }}
-          left={{ base: 0, md: "auto" }}
-          right={{ base: 0, md: "auto" }}
-          bottom={{ base: 0, md: "auto" }}
-          zIndex={{ base: 10, md: "auto" }}
+          boxShadow={{ base: "none", lg: "dark-lg" }}
+          display={{ base: areRoutesVisible ? "block" : "none", lg: "block" }}
+          position={{ base: "absolute", lg: "relative" }}
+          top={{ base: 0, lg: "auto" }}
+          left={{ base: "50%", lg: "auto" }}
+          right={{ base: 0, lg: "auto" }}
+          bottom={{ base: 0, lg: "auto" }}
+          zIndex={{ base: 10 }}
+          transform={{ base: "translateX(-50%)", lg: "none" }}
           overflowY="auto"
-          transition="all 0.4s"
-          ref={routesRef}
+          initial={false}
+          animate={{
+            clipPath: areRoutesVisible ? "inset(0 0 0 0)" : "inset(0 0 0 100%)",
+          }}
+          transition={{
+            duration: 0.4,
+            ease: "easeInOut",
+          }}
+          css={{
+            "@media (min-width: 993px)": {
+              clipPath: "inset(0 0 0 0) !important",
+            },
+          }}
         >
           <VStack gap={4} align="stretch">
             {renderQuotes()}
           </VStack>
-        </Box>
+        </MotionBox>
       </Flex>
     </Container>
   );

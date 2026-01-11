@@ -178,23 +178,23 @@ export const RouteNotSelected = () => {
           The Aggregator of Aggregators
         </Text>
         <HStack gap={4} mt={6} w="100%" justifyContent="center">
-          <Flex gap={2} alignItems="center">
-            <CheckCircle2Icon color="blue" size={16} />
-            <Text fontSize="sm" color={"blue.500"} p={0}>
+          <Flex gap={2} alignItems="center" color="blue.400">
+            <CheckCircle2Icon size={16} />
+            <Text fontSize="sm" p={0}>
               Totally Free
             </Text>
           </Flex>
 
-          <Flex gap={2} alignItems="center">
-            <CheckCircle2Icon color="blue" size={16} />
-            <Text fontSize="sm" color={"blue.500"} p={0}>
+          <Flex gap={2} alignItems="center" color="blue.400">
+            <CheckCircle2Icon size={16} />
+            <Text fontSize="sm" p={0}>
               Gas Estimation
             </Text>
           </Flex>
 
-          <Flex gap={1} alignItems="center">
-            <CheckCircle2Icon color="blue" size={16} />
-            <Text fontSize="sm" color={"blue.500"} p={0}>
+          <Flex gap={1} alignItems="center" color="blue.400">
+            <CheckCircle2Icon size={16} />
+            <Text fontSize="sm" p={0}>
               Preserves Privacy
             </Text>
           </Flex>

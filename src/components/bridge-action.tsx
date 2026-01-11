@@ -37,7 +37,9 @@ export const BridgeAction = () => {
       },
     });
 
-  const { selectedAdapter, from, to, reset } = useBridge((state) => state);
+  const { selectedAdapter, from, to, toggleRoutes, reset } = useBridge(
+    (state) => state,
+  );
   const { data: { quotes = [] } = {}, isLoading: areQuotesLoading } =
     useQuote();
 
@@ -52,10 +54,9 @@ export const BridgeAction = () => {
       !to.token ||
       !to.amount ||
       isApproving ||
-      isSending ||
-      !selectedAdapter
+      isSending
     );
-  }, [address, from, to, selectedAdapter, isApproving, isSending]);
+  }, [address, from, to, isApproving, isSending]);
 
   const approveToken = async () => {
     const selectedQuote = quotes.find(
@@ -218,7 +219,7 @@ export const BridgeAction = () => {
       size="lg"
       w="100%"
       disabled={isDisabled}
-      onClick={handleBridge}
+      onClick={selectedAdapter ? handleBridge : toggleRoutes}
       loading={areQuotesLoading || isApproving || isSending}
       loadingText={areQuotesLoading ? "Fetching quotes" : "Bridging"}
     >
