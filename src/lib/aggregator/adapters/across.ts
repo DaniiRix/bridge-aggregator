@@ -1,10 +1,8 @@
-import { estimateGas } from "wagmi/actions";
-import { wagmiConfig } from "@/lib/providers";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
 export class AcrossAdapter extends BaseAdapter {
   apiEndpoint = "https://app.across.to/api";
-  integratorId = ""; // @todo: add integrator id
+  integratorId = "0xdead"; // @todo: add integrator id
 
   constructor() {
     super("across", "https://icons.llamao.fi/icons/protocols/across?w=48&q=75");
@@ -22,6 +20,10 @@ export class AcrossAdapter extends BaseAdapter {
     url.searchParams.set("outputToken", outputToken);
     url.searchParams.set("destinationChainId", dstChainId.toString());
     url.searchParams.set("depositor", sender);
+    url.searchParams.set("recipient", sender);
+    url.searchParams.set("skipOriginTxEstimation", "false");
+    url.searchParams.set("refundOnOrigin", "true");
+    url.searchParams.set("integratorId", this.integratorId);
 
     const res = await fetch(url.toString());
     if (!res.ok) {
@@ -38,20 +40,13 @@ export class AcrossAdapter extends BaseAdapter {
       throw new Error("Swap simulation failed");
     }
 
-    const estimatedGas = await estimateGas(wagmiConfig, {
-      chainId: srcChainId,
-      to: data.swapTx.to,
-      data: data.swapTx.data,
-      value: data.swapTx.value ? BigInt(data.swapTx.value) : undefined,
-    });
-
     return {
       adapter: { name: this.name, logo: this.logo },
       tokenApprovalAddress: data?.checks.allowance.spender,
       estimatedFeeUSD: data.fees?.total?.amountUsd || "0",
       estimatedTime: data.expectedFillTime || 0,
       estimatedAmount: data.expectedOutputAmount || "0",
-      gasEstimate: estimatedGas?.toString() || "0",
+      gasEstimate: data.swapTx.gas || "0",
       txRequest: {
         to: data.swapTx.to,
         data: data.swapTx.data,
