@@ -35,14 +35,13 @@ export class NearAdapter extends BaseAdapter {
     const data = await res.json();
 
     if (typeof window === "undefined") {
-      const { writeFile } = await import("node:fs/promises");
+      const { writeFile, mkdir } = await import("node:fs/promises");
       const path = await import("node:path");
+      const filePath = path.join(process.cwd(), this.tokenListFile);
+      const dirPath = path.dirname(filePath);
 
-      console.log({ cwd: process.cwd() });
-      await writeFile(
-        path.join(process.cwd(), this.tokenListFile),
-        JSON.stringify(data, null, 2),
-      );
+      await mkdir(dirPath, { recursive: true });
+      await writeFile(filePath, JSON.stringify(data, null, 2));
     } else {
       console.warn(
         "[Near] generateTokenList should only be called in Node.js environment",
