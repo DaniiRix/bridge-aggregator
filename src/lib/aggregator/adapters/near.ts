@@ -1,12 +1,15 @@
 // Get partner api key from here: https://partners.near-intents.org to avoid 0.1% fee
 
-// import { writeFile } from "node:fs/promises";
-// import path from "node:path";
 import { encodeFunctionData, erc20Abi, type Hex } from "viem";
 import { estimateGas } from "wagmi/actions";
 import { wagmiConfig } from "@/lib/providers";
-import nearRoutes from "../../../data/near.json";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
+
+type NearRoute = {
+  contractAddress?: string;
+  blockchain: string;
+  assetId: string;
+};
 
 export class NearAdapter extends BaseAdapter {
   apiKey = "YOUR_SECRET_TOKEN";
@@ -14,38 +17,68 @@ export class NearAdapter extends BaseAdapter {
   referrer = "defillama.com";
   tokenListFile = "src/data/near.json";
 
+  private nearRoutes: NearRoute[] | null = null;
+
   constructor() {
     super("near", "https://icons.llamao.fi/icons/protocols/near?w=48&q=75");
   }
 
-  // async generateTokenList() {
-  //   const res = await fetch(`${this.apiEndpoint}/v0/tokens`);
-  //   if (!res.ok) {
-  //     const errorData = await res.json().catch(() => ({}));
-  //     throw new Error(
-  //       `[NearAdapter] Error fetching token list: ${errorData.message || res.statusText}`,
-  //     );
-  //   }
+  async generateTokenList() {
+    const res = await fetch(`${this.apiEndpoint}/v0/tokens`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(
+        `[Near] Error fetching token list: ${errorData.message || res.statusText}`,
+      );
+    }
 
-  //   const data = await res.json();
+    const data = await res.json();
 
-  //   await writeFile(
-  //     path.join(process.cwd(), this.tokenListFile),
-  //     JSON.stringify(data, null, 2),
-  //   );
-  // }
+    if (typeof window === "undefined") {
+      const { writeFile } = await import("node:fs/promises");
+      const path = await import("node:path");
 
-  supportsRoute(request: QuoteRequest): boolean {
+      await writeFile(
+        path.join(process.cwd(), this.tokenListFile),
+        JSON.stringify(data, null, 2),
+      );
+    } else {
+      console.warn(
+        "[Near] generateTokenList should only be called in Node.js environment",
+      );
+    }
+
+    return data;
+  }
+
+  private async getNearRoutes(): Promise<NearRoute[]> {
+    if (this.nearRoutes) {
+      return this.nearRoutes;
+    }
+
+    try {
+      const routes = await import("../../../data/near.json");
+      this.nearRoutes = routes.default || routes;
+      return this.nearRoutes || [];
+    } catch (error) {
+      console.warn("[Near] near.json not found, using empty routes");
+      this.nearRoutes = [];
+      return this.nearRoutes;
+    }
+  }
+
+  async supportsRoute(request: QuoteRequest): Promise<boolean> {
     const { srcChainId, dstChainId, inputToken, outputToken } = request;
+    const routes = await this.getNearRoutes();
 
-    const isInputSupported = nearRoutes.some(
+    const isInputSupported = routes.some(
       (route) =>
         route.contractAddress?.toLowerCase() === inputToken.toLowerCase() &&
         route.blockchain === this.chainIdToName(srcChainId),
     );
     if (!isInputSupported) return false;
 
-    const isOutputSupported = nearRoutes.some(
+    const isOutputSupported = routes.some(
       (route) =>
         route.contractAddress?.toLowerCase() === outputToken.toLowerCase() &&
         route.blockchain === this.chainIdToName(dstChainId),
@@ -57,8 +90,8 @@ export class NearAdapter extends BaseAdapter {
     const { srcChainId, dstChainId, inputToken, outputToken, sender, amount } =
       request;
 
-    const inputTokenAssetId = this.getAssetId(srcChainId, inputToken);
-    const outputTokenAssetId = this.getAssetId(dstChainId, outputToken);
+    const inputTokenAssetId = await this.getAssetId(srcChainId, inputToken);
+    const outputTokenAssetId = await this.getAssetId(dstChainId, outputToken);
 
     const deadline = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
 
@@ -185,10 +218,11 @@ export class NearAdapter extends BaseAdapter {
     }
   }
 
-  private getAssetId(chainId: number, address: string): string {
+  private async getAssetId(chainId: number, address: string): Promise<string> {
     const chainName = this.chainIdToName(chainId);
+    const routes = await this.getNearRoutes();
 
-    const assetId = nearRoutes.find(
+    const assetId = routes.find(
       (route) =>
         route.contractAddress?.toLowerCase() === address.toLowerCase() &&
         route.blockchain === chainName,

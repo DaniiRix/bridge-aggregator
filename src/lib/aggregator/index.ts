@@ -69,7 +69,7 @@ export class BridgeAggregator {
   > {
     try {
       if (adapter.supportsRoute) {
-        const supported = adapter.supportsRoute(request);
+        const supported = await adapter.supportsRoute(request);
 
         if (!supported) {
           return {

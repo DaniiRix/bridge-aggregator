@@ -40,5 +40,5 @@ export abstract class BaseAdapter {
   postBridge?(quote: Quote, srcTxHash: Hex): Promise<void>;
 
   generateTokenList?(): Promise<void>;
-  supportsRoute?(request: QuoteRequest): boolean;
+  async supportsRoute?(request: QuoteRequest): Promise<boolean>;
 }
