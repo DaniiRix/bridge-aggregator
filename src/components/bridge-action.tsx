@@ -216,7 +216,8 @@ export const BridgeAction = () => {
   return (
     <Button
       colorPalette="blue"
-      size="lg"
+      size="xl"
+      rounded="lg"
       w="100%"
       disabled={isDisabled}
       onClick={selectedAdapter ? handleBridge : toggleRoutes}

@@ -19,6 +19,7 @@ import { formatUnits } from "viem";
 import { BridgeAction } from "@/components/bridge-action";
 import { NoRouteFound, RouteList, RouteNotSelected } from "@/components/route";
 import { QuoteSkeleton } from "@/components/skeleton/quote";
+import { SlippageSettings } from "@/components/slippage-settings";
 import { TokenSwitcher } from "@/components/token-switcher";
 import { useQuote } from "@/hooks/use-quote";
 import { useTokenBalance } from "@/hooks/use-token-balance";
@@ -191,7 +192,7 @@ export default function BridgeAggregatorPage() {
           p={4}
           position="relative"
         >
-          <VStack gap={5} align="stretch">
+          <VStack gap={4} align="stretch">
             <Flex align="center">
               <Text fontWeight="bold" fontSize="md" ml={1}>
                 Bridge
@@ -390,6 +391,15 @@ export default function BridgeAggregatorPage() {
             )}
 
             <BridgeAction />
+
+            <Flex w="100%" gap={2} align="center" justify="space-between">
+              <Text fontSize="xs" color="gray.200" display="flex" gap={1}>
+                1 {from?.token?.symbol} = 1.01023 {to?.token?.symbol}{" "}
+                <Text color="gray.400">($1.00)</Text>
+              </Text>
+
+              <SlippageSettings />
+            </Flex>
           </VStack>
         </Box>
 

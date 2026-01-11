@@ -18,3 +18,11 @@ export const formatNumber = (value: string): string => {
     maximumFractionDigits: 2,
   }).format(Number(value));
 };
+
+export const formatPercent = (value: number): string => {
+  return new Intl.NumberFormat(undefined, {
+    style: "percent",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+};
