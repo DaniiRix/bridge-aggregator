@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && bun run scripts/generate-token-list.ts",
+    "build": "bun run scripts/generate-token-list.ts && next build",
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write"

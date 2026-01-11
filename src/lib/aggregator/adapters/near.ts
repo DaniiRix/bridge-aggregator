@@ -38,6 +38,7 @@ export class NearAdapter extends BaseAdapter {
       const { writeFile } = await import("node:fs/promises");
       const path = await import("node:path");
 
+      console.log({ cwd: process.cwd() });
       await writeFile(
         path.join(process.cwd(), this.tokenListFile),
         JSON.stringify(data, null, 2),
