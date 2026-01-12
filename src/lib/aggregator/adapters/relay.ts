@@ -16,8 +16,15 @@ export class RelayAdapter extends BaseAdapter {
   }
 
   async getQuote(request: QuoteRequest): Promise<Quote> {
-    const { srcChainId, dstChainId, inputToken, outputToken, sender, amount } =
-      request;
+    const {
+      slippagePercent,
+      srcChainId,
+      dstChainId,
+      inputToken,
+      outputToken,
+      sender,
+      amount,
+    } = request;
 
     const { isEOA } = await detectWalletType(sender, srcChainId);
 
@@ -36,6 +43,7 @@ export class RelayAdapter extends BaseAdapter {
         user: sender,
         referrer: this.referrer,
         explicitDeposit: !isEOA,
+        slippageTolerance: Math.round(slippagePercent * 100),
       }),
     });
     if (!res.ok) {

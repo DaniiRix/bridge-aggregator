@@ -38,7 +38,7 @@ export const useQuote = () => {
     chainId: from.chain?.id,
   });
 
-  return useQuery<{ quotes: QuoteWithAmount[]; warnings: string[] }>({
+  return useQuery<QuoteWithAmount[]>({
     queryKey: [
       "quotes",
       from.token?.chainId,
@@ -96,9 +96,8 @@ const getQuotes = async (
     !gasPrice ||
     !gasTokenPrice
   )
-    return { quotes: [], warnings: [] };
+    return [];
 
-  const warnings: string[] = []; // @todo
   const request: QuoteRequest = {
     slippagePercent,
     srcChainId: from.chain.id,
@@ -139,5 +138,5 @@ const getQuotes = async (
       parseFloat(a.estimatedAmountAfterFeesUSD || "0"),
   );
 
-  return { quotes: sortedQuotes, warnings };
+  return sortedQuotes;
 };

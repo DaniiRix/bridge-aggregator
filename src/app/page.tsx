@@ -12,7 +12,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import Decimal from "decimal.js-light";
-import { ArrowLeft, InfoIcon } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 import { formatUnits } from "viem";
@@ -21,6 +21,7 @@ import { NoRouteFound, RouteList, RouteNotSelected } from "@/components/route";
 import { QuoteSkeleton } from "@/components/skeleton/quote";
 import { SlippageSettings } from "@/components/slippage-settings";
 import { TokenSwitcher } from "@/components/token-switcher";
+import { Warnings } from "@/components/warnings";
 import { useQuote } from "@/hooks/use-quote";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useTokensPrice } from "@/hooks/use-token-price";
@@ -31,7 +32,6 @@ import { normalizeAddress } from "@/utils/string";
 import { Tooltip } from "../components/ui/tooltip";
 
 const MotionBox = motion(Box);
-const MotionVStack = motion(VStack);
 
 export default function BridgeAggregatorPage() {
   const switchPrivacyId = useId();
@@ -56,7 +56,7 @@ export default function BridgeAggregatorPage() {
   const { data: { fromTokenPrice, toTokenPrice } = {} } = useTokensPrice();
 
   const {
-    data: { quotes = [], warnings = [] } = {},
+    data: quotes = [],
     isLoading: areQuotesLoading,
     isSuccess,
     refetch: refetchQuotes,
@@ -129,14 +129,15 @@ export default function BridgeAggregatorPage() {
   }, [toTokenPrice, from.amount, to.token?.decimals, selectedAdapter, quotes]);
 
   useEffect(() => {
-    if (to.token && quotes?.length > 0) {
+    if (to.token?.decimals && quotes?.length > 0) {
       const newAmount = formatUnits(
         BigInt(quotes[0].estimatedAmount),
         to.token.decimals,
       ).toString();
+
       setToAmount(newAmount);
     }
-  }, [to.token, quotes, setToAmount]);
+  }, [to.token?.decimals, quotes, setToAmount]);
 
   const handleInputChange = useCallback(
     (value: string) => {
@@ -396,43 +397,7 @@ export default function BridgeAggregatorPage() {
               </VStack>
             </Box>
 
-            {warnings?.length > 0 && (
-              <MotionVStack
-                gap={2}
-                display={{ base: "none", md: "flex" }}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-              >
-                <AnimatePresence mode="popLayout">
-                  {warnings.map((warning, i) => (
-                    <MotionBox
-                      key={warning}
-                      w="100%"
-                      bg="yellow.200/10"
-                      p={2}
-                      borderRadius="lg"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 10 }}
-                      transition={{
-                        duration: 0.25,
-                        delay: i * 0.05,
-                        ease: "easeOut",
-                      }}
-                    >
-                      <Flex align="center" gap={2}>
-                        <InfoIcon color="#ECC94B" size={16} />
-                        <Text fontSize="xs" color="yellow.400">
-                          {warning}
-                        </Text>
-                      </Flex>
-                    </MotionBox>
-                  ))}
-                </AnimatePresence>
-              </MotionVStack>
-            )}
+            <Warnings />
 
             <BridgeAction />
 
@@ -446,7 +411,7 @@ export default function BridgeAggregatorPage() {
                   </Text>
                 </Text>
 
-                <SlippageSettings />
+                <SlippageSettings refetchQuotes={refetchQuotes} />
               </Flex>
             )}
           </VStack>

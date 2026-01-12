@@ -4,7 +4,6 @@ import { createJSONStorage, persist } from "zustand/middleware";
 export const DEFAULT_SLIPPAGE_PERCENT = 1; // 1%
 export const MAX_SLIPPAGE_PERCENT = 99; // 99%
 export const BASIS_POINTS_MULTIPLIER = 10_000;
-export const BASIS_POINTS_DENOMINATOR = 1_000_000;
 
 type SlippageState = {
   slippagePercent: number;

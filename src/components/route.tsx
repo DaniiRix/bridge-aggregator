@@ -2,6 +2,7 @@ import { Box, Flex, HStack, Image, Link, Text, VStack } from "@chakra-ui/react";
 import Decimal from "decimal.js-light";
 import { CheckCircle2Icon, ClockIcon, ExternalLinkIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { useCallback } from "react";
 import { formatUnits } from "viem";
 import { AggIcons, LlamaIcon } from "@/components/icons";
 import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
@@ -21,11 +22,29 @@ export const RouteList = ({
   lastFetchedQuotesAt: number;
   refetchQuotes: () => void;
 }) => {
-  const { selectedAdapter, to, selectAdapter } = useBridge();
+  const { selectedAdapter, to, selectAdapter, setToAmount } = useBridge();
+
+  const handleSelection = useCallback(
+    (adapter: string) => {
+      if (adapter && to.token?.decimals) {
+        const quote = quotes.find((q) => q.adapter.name === adapter);
+        if (quote) {
+          selectAdapter(adapter);
+
+          const newAmount = formatUnits(
+            BigInt(quote.estimatedAmount),
+            to.token.decimals,
+          ).toString();
+          setToAmount(newAmount);
+        }
+      }
+    },
+    [to.token?.decimals, quotes, setToAmount, selectAdapter],
+  );
 
   return (
     <VStack gap={2}>
-      <HStack align="center" gap={2}>
+      <HStack align="flex-start" gap={2}>
         <Flex direction="column" flex={1} gap={2}>
           <Text fontSize="lg" fontWeight="semibold" color="white" w="100%">
             Select a route
@@ -71,7 +90,7 @@ export const RouteList = ({
                 delay: qIdx * 0.05,
                 ease: "easeOut",
               }}
-              onClick={() => selectAdapter(q.adapter.name)}
+              onClick={() => handleSelection(q.adapter.name)}
             >
               <Flex justify="space-between" align="center">
                 <Flex align="center" gap={2}>

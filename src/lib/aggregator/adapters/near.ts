@@ -88,8 +88,15 @@ export class NearAdapter extends BaseAdapter {
   }
 
   async getQuote(request: QuoteRequest): Promise<Quote> {
-    const { srcChainId, dstChainId, inputToken, outputToken, sender, amount } =
-      request;
+    const {
+      slippagePercent,
+      srcChainId,
+      dstChainId,
+      inputToken,
+      outputToken,
+      sender,
+      amount,
+    } = request;
 
     const inputTokenAssetId = await this.getAssetId(srcChainId, inputToken);
     const outputTokenAssetId = await this.getAssetId(dstChainId, outputToken);
@@ -106,7 +113,7 @@ export class NearAdapter extends BaseAdapter {
         dry: false,
         depositMode: "SIMPLE",
         swapType: "EXACT_INPUT",
-        slippageTolerance: 100, // 1%
+        slippageTolerance: Math.round(slippagePercent * 100),
         originAsset: inputTokenAssetId,
         depositType: "ORIGIN_CHAIN",
         destinationAsset: outputTokenAssetId,

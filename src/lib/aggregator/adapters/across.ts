@@ -9,8 +9,15 @@ export class AcrossAdapter extends BaseAdapter {
   }
 
   async getQuote(request: QuoteRequest): Promise<Quote> {
-    const { srcChainId, dstChainId, inputToken, outputToken, sender, amount } =
-      request;
+    const {
+      slippagePercent,
+      srcChainId,
+      dstChainId,
+      inputToken,
+      outputToken,
+      sender,
+      amount,
+    } = request;
 
     const url = new URL(`${this.apiEndpoint}/swap/approval`);
     url.searchParams.set("tradeType", "exactInput");
@@ -23,6 +30,7 @@ export class AcrossAdapter extends BaseAdapter {
     url.searchParams.set("recipient", sender);
     url.searchParams.set("skipOriginTxEstimation", "false");
     url.searchParams.set("refundOnOrigin", "true");
+    url.searchParams.set("slippage", String(slippagePercent / 100));
     url.searchParams.set("integratorId", this.integratorId);
 
     const res = await fetch(url.toString());

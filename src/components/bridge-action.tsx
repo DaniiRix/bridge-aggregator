@@ -40,8 +40,7 @@ export const BridgeAction = () => {
   const { selectedAdapter, from, to, toggleRoutes, reset } = useBridge(
     (state) => state,
   );
-  const { data: { quotes = [] } = {}, isLoading: areQuotesLoading } =
-    useQuote();
+  const { data: quotes = [], isLoading: areQuotesLoading } = useQuote();
 
   const isDisabled = useMemo(() => {
     return (

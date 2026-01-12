@@ -28,7 +28,11 @@ const SLIPPAGE_OPTIONS = [
   { label: "3%", value: 30000 }, // 3% * 10_000
 ] as const;
 
-export const SlippageSettings = () => {
+export const SlippageSettings = ({
+  refetchQuotes,
+}: {
+  refetchQuotes: () => void;
+}) => {
   const { slippagePercent, setSlippagePercent } = useSlippage();
 
   const [open, setOpen] = useState(false);
@@ -75,7 +79,9 @@ export const SlippageSettings = () => {
       setIsCustomSelected(true);
       setCustomValue(String(currentSlippageBp / 10_000));
     }
-  }, [slippagePercent]);
+
+    refetchQuotes();
+  }, [slippagePercent, refetchQuotes]);
 
   const handleValueChange = useCallback((value: string | null) => {
     if (!value) return;
