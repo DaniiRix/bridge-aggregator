@@ -1,6 +1,7 @@
 import { Box, Flex, HStack, Image, Link, Text, VStack } from "@chakra-ui/react";
 import Decimal from "decimal.js-light";
 import { CheckCircle2Icon, ClockIcon, ExternalLinkIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { formatUnits } from "viem";
 import { AggIcons, LlamaIcon } from "@/components/icons";
 import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
@@ -8,6 +9,8 @@ import { useBridge } from "@/store/bridge";
 import { formatNumber } from "@/utils/number";
 import { RefreshQuotes } from "./refresh";
 import { TokenWithChainLogo } from "./ui/dual-token";
+
+const MotionBox = motion(Box);
 
 export const RouteList = ({
   quotes,
@@ -38,98 +41,108 @@ export const RouteList = ({
         />
       </HStack>
 
-      {quotes?.map((q, qIdx) => {
-        const lossPercent = new Decimal(quotes[0].estimatedAmountAfterFeesUSD)
-          .sub(q.estimatedAmountAfterFeesUSD)
-          .div(quotes[0].estimatedAmountAfterFeesUSD)
-          .mul(100)
-          .toDecimalPlaces(2)
-          .toNumber();
+      <AnimatePresence mode="wait">
+        {quotes?.map((q, qIdx) => {
+          const lossPercent = new Decimal(quotes[0].estimatedAmountAfterFeesUSD)
+            .sub(q.estimatedAmountAfterFeesUSD)
+            .div(quotes[0].estimatedAmountAfterFeesUSD)
+            .mul(100)
+            .toDecimalPlaces(2)
+            .toNumber();
 
-        return (
-          <Box
-            key={q.adapter.name}
-            w="100%"
-            p={4}
-            bg="bg.2"
-            borderRadius="lg"
-            border="2px solid"
-            borderColor={
-              selectedAdapter === q.adapter.name ? "blue.500" : "transparent"
-            }
-            cursor="pointer"
-            _hover={{ borderColor: "gray.600" }}
-            onClick={() => selectAdapter(q.adapter.name)}
-          >
-            <Flex justify="space-between" align="center">
-              <Flex align="center" gap={2}>
-                <TokenWithChainLogo token={to.token!} chain={to.chain!} />
-                <Flex direction="column">
-                  <Text
-                    fontSize="lg"
-                    color="gray.200"
-                    fontWeight="semibold"
-                    display="flex"
-                    gap={2}
-                  >
-                    {Number.parseFloat(
-                      formatUnits(
-                        BigInt(q.estimatedAmount),
-                        to.token!.decimals,
-                      ),
-                    ).toFixed(to.token!.decimals / 3)}{" "}
-                    <Text color="gray.400">{to.token!.symbol}</Text>
-                  </Text>
-
-                  <Flex gap={3}>
-                    <Text fontSize="sm" color="gray.400">
-                      ≈ {formatNumber(q.estimatedAmountAfterFeesUSD)} after gas
-                      fees
-                    </Text>
+          return (
+            <MotionBox
+              key={q.adapter.name}
+              w="100%"
+              p={4}
+              bg="bg.2"
+              borderRadius="lg"
+              border="2px solid"
+              borderColor={
+                selectedAdapter === q.adapter.name ? "blue.500" : "transparent"
+              }
+              cursor="pointer"
+              _hover={{ borderColor: "gray.600" }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{
+                duration: 0.3,
+                delay: qIdx * 0.05,
+                ease: "easeOut",
+              }}
+              onClick={() => selectAdapter(q.adapter.name)}
+            >
+              <Flex justify="space-between" align="center">
+                <Flex align="center" gap={2}>
+                  <TokenWithChainLogo token={to.token!} chain={to.chain!} />
+                  <Flex direction="column">
                     <Text
-                      fontSize="sm"
-                      color="gray.400"
+                      fontSize="lg"
+                      color="gray.200"
+                      fontWeight="semibold"
                       display="flex"
-                      gap={0.5}
-                      alignItems="center"
+                      gap={2}
                     >
-                      <ClockIcon size={12} />
-                      {q.estimatedTime}s
+                      {Number.parseFloat(
+                        formatUnits(
+                          BigInt(q.estimatedAmount),
+                          to.token!.decimals,
+                        ),
+                      ).toFixed(to.token!.decimals / 3)}{" "}
+                      <Text color="gray.400">{to.token!.symbol}</Text>
                     </Text>
+
+                    <Flex gap={3}>
+                      <Text fontSize="sm" color="gray.400">
+                        ≈ {formatNumber(q.estimatedAmountAfterFeesUSD)} after
+                        gas fees
+                      </Text>
+                      <Text
+                        fontSize="sm"
+                        color="gray.400"
+                        display="flex"
+                        gap={0.5}
+                        alignItems="center"
+                      >
+                        <ClockIcon size={12} />
+                        {q.estimatedTime}s
+                      </Text>
+                    </Flex>
+                  </Flex>
+                </Flex>
+
+                <Flex direction="column" gap={2} align="flex-end">
+                  <Text
+                    fontWeight="medium"
+                    fontSize="sm"
+                    color={qIdx !== 0 ? "red.500" : ""}
+                  >
+                    {qIdx === 0 ? "BEST" : `-${lossPercent}%`}
+                  </Text>
+                  <Flex
+                    fontWeight="medium"
+                    display="flex"
+                    fontSize="sm"
+                    gap={1.5}
+                    alignItems="center"
+                  >
+                    <Text color="gray.400">via</Text>
+                    <Image
+                      src={q.adapter.logo}
+                      alt={q.adapter.name}
+                      width="16px"
+                      height="16px"
+                      rounded="full"
+                    />
+                    <Text> {q.adapter.name}</Text>
                   </Flex>
                 </Flex>
               </Flex>
-
-              <Flex direction="column" gap={2} align="flex-end">
-                <Text
-                  fontWeight="medium"
-                  fontSize="sm"
-                  color={qIdx !== 0 ? "red.500" : ""}
-                >
-                  {qIdx === 0 ? "BEST" : `-${lossPercent}%`}
-                </Text>
-                <Flex
-                  fontWeight="medium"
-                  display="flex"
-                  fontSize="sm"
-                  gap={1.5}
-                  alignItems="center"
-                >
-                  <Text color="gray.400">via</Text>
-                  <Image
-                    src={q.adapter.logo}
-                    alt={q.adapter.name}
-                    width="16px"
-                    height="16px"
-                    rounded="full"
-                  />
-                  <Text> {q.adapter.name}</Text>
-                </Flex>
-              </Flex>
-            </Flex>
-          </Box>
-        );
-      })}
+            </MotionBox>
+          );
+        })}
+      </AnimatePresence>
     </VStack>
   );
 };

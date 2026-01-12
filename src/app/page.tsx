@@ -24,6 +24,7 @@ import { TokenSwitcher } from "@/components/token-switcher";
 import { useQuote } from "@/hooks/use-quote";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useTokensPrice } from "@/hooks/use-token-price";
+import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
 import { useBridge } from "@/store/bridge";
 import { formatNumber, isInputGreaterThanDecimals } from "@/utils/number";
 import { normalizeAddress } from "@/utils/string";
@@ -38,6 +39,7 @@ export default function BridgeAggregatorPage() {
   const {
     isPrivacyEnabled,
     areRoutesVisible,
+    selectedAdapter,
     from,
     to,
     togglePrivacy,
@@ -83,6 +85,48 @@ export default function BridgeAggregatorPage() {
     from.token,
     to.token,
   ]);
+
+  const exchangeRate = useMemo(() => {
+    if (!from.amount || !to.token?.decimals || quotes.length === 0)
+      return { rate: "0", rateUSD: "0" };
+
+    let selectedQuote: QuoteWithAmount | undefined;
+
+    if (selectedAdapter) {
+      selectedQuote = quotes.find((q) => q.adapter.name === selectedAdapter);
+      if (!selectedQuote) return { rate: "0", rateUSD: "0" };
+    } else {
+      selectedQuote = quotes[0];
+    }
+
+    if (!selectedQuote) return { rate: "0", rateUSD: "0" };
+
+    const rate = new Decimal(selectedQuote.estimatedAmount)
+      .div(new Decimal(10).pow(to.token.decimals))
+      .div(from.amount)
+      .toDecimalPlaces(4);
+
+    if (rate.isZero()) {
+      return { rate: "0", rateUSD: "0" };
+    }
+
+    const rateUSD = new Decimal(toTokenPrice || "0")
+      .mul(rate)
+      .toDecimalPlaces(2)
+      .toString();
+
+    if (rate.lt("0.0001")) {
+      return {
+        rate: "< 0.0001",
+        rateUSD,
+      };
+    }
+
+    return {
+      rate: rate.toString(),
+      rateUSD,
+    };
+  }, [toTokenPrice, from.amount, to.token?.decimals, selectedAdapter, quotes]);
 
   useEffect(() => {
     if (to.token && quotes?.length > 0) {
@@ -151,7 +195,7 @@ export default function BridgeAggregatorPage() {
     }
 
     if (!quotes || quotes.length === 0) {
-      if (isSuccess) {
+      if (isSuccess && from.amount) {
         return <NoRouteFound />;
       }
 
@@ -392,16 +436,19 @@ export default function BridgeAggregatorPage() {
 
             <BridgeAction />
 
-            {/* {quotes.length > 0 && (
+            {quotes.length > 0 && (
               <Flex w="100%" gap={2} align="center" justify="space-between">
-                <Text fontSize="xs" color="gray.200" display="flex" gap={1}>
-                  1 {from?.token?.symbol} = 1.01023 {to?.token?.symbol}{" "}
-                  <Text color="gray.400">($1.00)</Text>
+                <Text fontSize="xs" color="gray.300" display="flex" gap={1}>
+                  1 {from?.token?.symbol} = {exchangeRate.rate}{" "}
+                  {to?.token?.symbol}
+                  <Text color="gray.400" ml={0.5}>
+                    (${exchangeRate.rateUSD})
+                  </Text>
                 </Text>
 
                 <SlippageSettings />
               </Flex>
-            )} */}
+            )}
           </VStack>
         </Box>
 

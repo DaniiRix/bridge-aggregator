@@ -1,14 +1,16 @@
 import {
   Button,
   Dialog,
+  Flex,
   Grid,
+  IconButton,
   Input,
   InputGroup,
   Portal,
   RadioGroup,
   Text,
 } from "@chakra-ui/react";
-import { Settings2Icon } from "lucide-react";
+import { Settings2Icon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BASIS_POINTS_MULTIPLIER,
@@ -136,7 +138,12 @@ export const SlippageSettings = () => {
   return (
     <Dialog.Root size="sm" open={open} onOpenChange={(e) => setOpen(e.open)}>
       <Dialog.Trigger asChild>
-        <Button variant="outline" size="xs" borderColor="gray.700">
+        <Button
+          variant="outline"
+          size="xs"
+          borderColor="gray.700"
+          color="gray.300"
+        >
           Max slippage: {formatPercent(slippagePercent / 100)}{" "}
           <Settings2Icon size={14} />
         </Button>
@@ -146,7 +153,22 @@ export const SlippageSettings = () => {
         <Dialog.Positioner>
           <Dialog.Content bg="bg.1">
             <Dialog.Header>
-              <Dialog.Title color="white">Slippage tolerance</Dialog.Title>
+              <Flex
+                align="center"
+                justifyContent="space-between"
+                gap={2}
+                w="100%"
+              >
+                <Dialog.Title color="white">Slippage tolerance</Dialog.Title>
+                <IconButton
+                  bg="none"
+                  color="gray.100"
+                  size="sm"
+                  onClick={() => setOpen(false)}
+                >
+                  <XIcon />
+                </IconButton>
+              </Flex>
             </Dialog.Header>
             <Dialog.Body color="white">
               <Text fontSize="sm">

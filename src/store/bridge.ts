@@ -79,9 +79,21 @@ export const useBridge = create<BridgeStore>()((set) => ({
       to: { ...state.to, amount: "" },
     })),
   setToChain: (chain) =>
-    set((state) => ({ to: { ...state.to, chain, amount: "" } })),
+    set((state) => ({
+      from: {
+        ...state.from,
+        amount: "",
+      },
+      to: { ...state.to, chain, amount: "" },
+    })),
   setToToken: (token) =>
-    set((state) => ({ to: { ...state.to, token, amount: "" } })),
+    set((state) => ({
+      from: {
+        ...state.from,
+        amount: "",
+      },
+      to: { ...state.to, token, amount: "" },
+    })),
   setToAmount: (amount) => set((state) => ({ to: { ...state.to, amount } })),
   reset: () => set(defaultInitState),
 }));

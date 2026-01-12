@@ -23,7 +23,8 @@ export const bridgeAggregator = new BridgeAggregator(
   },
 );
 
-export const QUOTES_REFETCH_TIME_MS = 25_000;
+export const QUOTES_REFETCH_TIME_MS =
+  process.env.NODE_ENV === "development" ? 200_000 : 25_000;
 
 export const useQuote = () => {
   const { address } = useConnection();
