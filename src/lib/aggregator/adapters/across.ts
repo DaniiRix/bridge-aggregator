@@ -22,9 +22,9 @@ export class AcrossAdapter extends BaseAdapter {
     const url = new URL(`${this.apiEndpoint}/swap/approval`);
     url.searchParams.set("tradeType", "exactInput");
     url.searchParams.set("amount", amount);
-    url.searchParams.set("inputToken", inputToken);
+    url.searchParams.set("inputToken", inputToken.address);
     url.searchParams.set("originChainId", srcChainId.toString());
-    url.searchParams.set("outputToken", outputToken);
+    url.searchParams.set("outputToken", outputToken.address);
     url.searchParams.set("destinationChainId", dstChainId.toString());
     url.searchParams.set("depositor", sender);
     url.searchParams.set("recipient", sender);
@@ -47,6 +47,8 @@ export class AcrossAdapter extends BaseAdapter {
     if (!data.swapTx?.simulationSuccess && !approval) {
       throw new Error("Swap simulation failed");
     }
+
+    console.log({ acrossSwapTx: data.swapTx });
 
     return {
       adapter: { name: this.name, logo: this.logo },

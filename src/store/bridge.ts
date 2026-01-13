@@ -61,12 +61,12 @@ export const useBridge = create<BridgeStore>()((set) => ({
   selectAdapter: (adapter) => set(() => ({ selectedAdapter: adapter })),
   setFromChain: (chain) =>
     set((state) => ({
-      from: { ...state.from, chain },
+      from: { ...state.from, chain, amount: "" },
       to: { ...state.to, amount: "" },
     })),
   setFromToken: (token) =>
     set((state) => ({
-      from: { ...state.from, token },
+      from: { ...state.from, token, amount: "" },
       to: { ...state.to, amount: "" },
     })),
   setFromAmount: (amount) =>

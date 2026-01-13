@@ -1,11 +1,12 @@
 import type { Hex } from "viem";
+import type { Token } from "@/store/bridge";
 
 export interface QuoteRequest {
   slippagePercent: number;
   srcChainId: number;
   dstChainId: number;
-  inputToken: string;
-  outputToken: string;
+  inputToken: Token;
+  outputToken: Token;
   sender: Hex;
   amount: string;
 }

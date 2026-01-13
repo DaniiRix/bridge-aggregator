@@ -74,14 +74,16 @@ export class NearAdapter extends BaseAdapter {
 
     const isInputSupported = routes.some(
       (route) =>
-        route.contractAddress?.toLowerCase() === inputToken.toLowerCase() &&
+        route.contractAddress?.toLowerCase() ===
+          inputToken.address.toLowerCase() &&
         route.blockchain === this.chainIdToName(srcChainId),
     );
     if (!isInputSupported) return false;
 
     const isOutputSupported = routes.some(
       (route) =>
-        route.contractAddress?.toLowerCase() === outputToken.toLowerCase() &&
+        route.contractAddress?.toLowerCase() ===
+          outputToken.address.toLowerCase() &&
         route.blockchain === this.chainIdToName(dstChainId),
     );
     return isOutputSupported;
@@ -98,8 +100,14 @@ export class NearAdapter extends BaseAdapter {
       amount,
     } = request;
 
-    const inputTokenAssetId = await this.getAssetId(srcChainId, inputToken);
-    const outputTokenAssetId = await this.getAssetId(dstChainId, outputToken);
+    const inputTokenAssetId = await this.getAssetId(
+      srcChainId,
+      inputToken.address,
+    );
+    const outputTokenAssetId = await this.getAssetId(
+      dstChainId,
+      outputToken.address,
+    );
 
     const deadline = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
 
@@ -159,7 +167,7 @@ export class NearAdapter extends BaseAdapter {
       estimatedAmount: quote?.amountOut || "0",
       gasEstimate: estimatedGas?.toString() || "0",
       txRequest: {
-        to: inputToken as Hex,
+        to: inputToken.address as Hex,
         data: encodedFnData,
       },
       extraData: {

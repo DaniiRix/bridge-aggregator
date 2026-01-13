@@ -1,7 +1,6 @@
 // ref: https://docs.relay.link/references/api/get-quote-v2
 // for hyperliquid: https://github.com/relayprotocol/relay-kit/blob/522748b8810c3f81d5b9a990485bd7eaf8e8e689/packages/sdk/src/utils/executeSteps/index.ts#L128
 
-import Decimal from "decimal.js-light";
 import { estimateGas } from "wagmi/actions";
 import { wagmiConfig } from "@/lib/providers";
 import { detectWalletType } from "@/utils/wallet";
@@ -36,9 +35,9 @@ export class RelayAdapter extends BaseAdapter {
       body: JSON.stringify({
         tradeType: "EXACT_INPUT",
         amount: amount,
-        originCurrency: inputToken,
+        originCurrency: inputToken.address,
         originChainId: srcChainId,
-        destinationCurrency: outputToken,
+        destinationCurrency: outputToken.address,
         destinationChainId: dstChainId,
         user: sender,
         referrer: this.referrer,

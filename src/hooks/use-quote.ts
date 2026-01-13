@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import Decimal from "decimal.js-light";
-import { type Address, formatUnits, getAddress, parseUnits } from "viem";
+import { type Address, formatUnits, parseUnits } from "viem";
 import { useConnection, useGasPrice } from "wagmi";
 import { getQuotesFromServer } from "@/lib/actions/quote";
 import { bridgeAggregator } from "@/lib/aggregator";
@@ -98,8 +98,8 @@ const getQuotes = async (
     slippagePercent,
     srcChainId: from.chain.id,
     dstChainId: to.chain.id,
-    inputToken: getAddress(from.token.address),
-    outputToken: getAddress(to.token.address),
+    inputToken: from.token,
+    outputToken: to.token,
     sender: address,
     amount: parseUnits(debouncedAmount, from.token.decimals).toString(),
   };
@@ -125,7 +125,8 @@ const getQuotes = async (
 
     const estimatedAmountAfterFeesUSD = estimatedAmountUSD
       .sub(gasFeesUSD)
-      .toFixed(6);
+      .toDecimalPlaces(4)
+      .toString();
 
     return {
       ...q,
@@ -134,11 +135,15 @@ const getQuotes = async (
     };
   });
 
-  const sortedQuotes = quotesWithAmount.sort(
-    (a, b) =>
+  const sortedQuotes = quotesWithAmount.sort((a, b) => {
+    if (a.gasEstimate === "0" && b.gasEstimate !== "0") return 1;
+    if (a.gasEstimate !== "0" && b.gasEstimate === "0") return -1;
+
+    return (
       parseFloat(b.estimatedAmountAfterFeesUSD || "0") -
-      parseFloat(a.estimatedAmountAfterFeesUSD || "0"),
-  );
+      parseFloat(a.estimatedAmountAfterFeesUSD || "0")
+    );
+  });
 
   return sortedQuotes;
 };

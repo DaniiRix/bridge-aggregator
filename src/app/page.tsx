@@ -237,6 +237,7 @@ export default function BridgeAggregatorPage() {
         <Box
           w="100%"
           maxW="30rem"
+          height="fit-content"
           borderRadius="xl"
           border="1px solid"
           borderColor="gray.700"

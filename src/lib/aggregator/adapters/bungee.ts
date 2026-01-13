@@ -55,7 +55,7 @@ export class BungeeAdapter extends BaseAdapter {
     // @todo, causing 429 error on public backend
     // const [tokenInRes, tokenOutRes] = await Promise.all([
     //   fetch(
-    //     `${this.apiEndpoint}/api/v1/tokens/search?q=${inputToken}&userAddress=${sender}`,
+    //     `${this.apiEndpoint}/api/v1/tokens/search?q=${inputToken.address}&userAddress=${sender}`,
     //     {
     //       method: "GET",
     //       headers: {
@@ -65,7 +65,7 @@ export class BungeeAdapter extends BaseAdapter {
     //     },
     //   ),
     //   fetch(
-    //     `${this.apiEndpoint}/api/v1/tokens/search?q=${outputToken}&userAddress=${sender}`,
+    //     `${this.apiEndpoint}/api/v1/tokens/search?q=${outputToken.address}&userAddress=${sender}`,
     //     {
     //       method: "GET",
     //       headers: {
@@ -108,13 +108,13 @@ export class BungeeAdapter extends BaseAdapter {
     } = request;
 
     const inToken =
-      inputToken === zeroAddress
+      inputToken.address === zeroAddress
         ? "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-        : inputToken;
+        : inputToken.address;
     const outToken =
-      outputToken === zeroAddress
+      outputToken.address === zeroAddress
         ? "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-        : outputToken;
+        : outputToken.address;
 
     const url = new URL(`${this.apiEndpoint}/api/v1/bungee/quote`);
     url.searchParams.set("userAddress", sender);

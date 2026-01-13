@@ -11,11 +11,11 @@ export const isInputGreaterThanDecimals = (
   );
 };
 
-export const formatNumber = (value: string): string => {
+export const formatNumber = (value: string, maxDecimals?: number): string => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 2,
+    maximumFractionDigits: maxDecimals ?? 2,
   }).format(Number(value));
 };
 
