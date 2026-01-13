@@ -27,6 +27,7 @@ import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useTokensPrice } from "@/hooks/use-token-price";
 import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
 import { useBridge } from "@/store/bridge";
+import { usePrivacy } from "@/store/privacy";
 import { formatNumber, isInputGreaterThanDecimals } from "@/utils/number";
 import { normalizeAddress } from "@/utils/string";
 import { Tooltip } from "../components/ui/tooltip";
@@ -37,16 +38,16 @@ export default function BridgeAggregatorPage() {
   const switchPrivacyId = useId();
 
   const {
-    isPrivacyEnabled,
     areRoutesVisible,
     selectedAdapter,
     from,
     to,
-    togglePrivacy,
     toggleRoutes,
     setFromAmount,
     setToAmount,
   } = useBridge();
+
+  const { isPrivacyEnabled, togglePrivacy } = usePrivacy();
 
   const { data: tokensWithBalanceOnFromChain } = useTokenBalance(
     from.chain?.id,

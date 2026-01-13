@@ -39,7 +39,7 @@ export const useSlippage = create<SlippageStore>()(
       },
     }),
     {
-      name: "slippage",
+      name: "llamabridge-slippage",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {

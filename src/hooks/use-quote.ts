@@ -2,9 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import Decimal from "decimal.js-light";
 import { type Address, formatUnits, getAddress, parseUnits } from "viem";
 import { useConnection, useGasPrice } from "wagmi";
+import { getQuotesFromServer } from "@/lib/actions/quote";
 import { BridgeAggregator } from "@/lib/aggregator";
 import { AcrossAdapter } from "@/lib/aggregator/adapters/across";
 import type {
+  Quote,
   QuoteRequest,
   QuoteWithAmount,
 } from "@/lib/aggregator/adapters/base";
@@ -12,6 +14,7 @@ import { NearAdapter } from "@/lib/aggregator/adapters/near";
 import { RelayAdapter } from "@/lib/aggregator/adapters/relay";
 import type { BridgeState } from "@/store/bridge";
 import { useBridge } from "@/store/bridge";
+import { usePrivacy } from "@/store/privacy";
 import { useSlippage } from "@/store/slippage";
 import { useDebounce } from "./use-debounce";
 import { useTokensPrice } from "./use-token-price";
@@ -31,6 +34,7 @@ export const useQuote = () => {
 
   const { slippagePercent } = useSlippage((state) => state);
   const { from, to } = useBridge();
+  const { isPrivacyEnabled } = usePrivacy();
 
   const debouncedAmount = useDebounce(from.amount, 500);
   const { data: { toTokenPrice, gasTokenPrice } = {} } = useTokensPrice();
@@ -53,6 +57,7 @@ export const useQuote = () => {
         from,
         to,
         debouncedAmount,
+        isPrivacyEnabled,
         slippagePercent,
         toTokenPrice,
         gasTokenPrice,
@@ -78,6 +83,7 @@ const getQuotes = async (
   from?: BridgeState["from"],
   to?: BridgeState["to"],
   debouncedAmount?: string,
+  isPrivacyEnabled?: boolean,
   slippagePercent?: number,
   tokenPrice?: string,
   gasTokenPrice?: string,
@@ -108,7 +114,13 @@ const getQuotes = async (
     amount: parseUnits(debouncedAmount, from.token.decimals).toString(),
   };
 
-  const quotes = await bridgeAggregator.getQuotes(request);
+  let quotes: Quote[] = [];
+  if (isPrivacyEnabled) {
+    quotes = await getQuotesFromServer(request);
+  } else {
+    quotes = await bridgeAggregator.getQuotes(request);
+  }
+
   console.log({ quotes });
 
   const quotesWithAmount: QuoteWithAmount[] = quotes.map((q) => {
