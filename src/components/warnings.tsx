@@ -2,7 +2,7 @@ import { Box, Flex, Text, VStack } from "@chakra-ui/react";
 import Decimal from "decimal.js-light";
 import { InfoIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { Fragment } from "react/jsx-runtime";
 import { useQuote } from "@/hooks/use-quote";
 import { useTokensPrice } from "@/hooks/use-token-price";
@@ -18,47 +18,48 @@ export const Warnings = () => {
 
   const { data: { fromTokenPrice } = {} } = useTokensPrice();
 
-  const [warnings, setWarnings] = useState<string[]>([]);
+  const warnings = useMemo(() => {
+    const warningsList: string[] = [];
 
-  useEffect(() => {
-    const warnings: string[] = [];
+    if (!selectedAdapter || !from.amount || quotes.length === 0) {
+      return warningsList;
+    }
 
-    if (selectedAdapter && from.amount) {
-      const quote = quotes.find((q) => q.adapter.name === selectedAdapter);
-      if (!quote) return;
+    const quote = quotes.find((q) => q.adapter.name === selectedAdapter);
+    if (!quote) return warningsList;
 
-      if (quote.adapter.name !== quotes[0].adapter.name) {
-        const lossPercent = new Decimal(quotes[0].estimatedAmountAfterFeesUSD)
-          .sub(quote.estimatedAmountAfterFeesUSD)
-          .div(quotes[0].estimatedAmountAfterFeesUSD)
-          .mul(100)
-          .toDecimalPlaces(2)
-          .toNumber();
+    // Check if not using best adapter
+    if (quote.adapter.name !== quotes[0].adapter.name) {
+      const lossPercent = new Decimal(quotes[0].estimatedAmountAfterFeesUSD)
+        .sub(quote.estimatedAmountAfterFeesUSD)
+        .div(quotes[0].estimatedAmountAfterFeesUSD)
+        .mul(100)
+        .toDecimalPlaces(2)
+        .toNumber();
 
-        warnings.push(
-          `You are loosing ${lossPercent}% by not using ${titleCase(quotes[0].adapter.name)}`,
+      warningsList.push(
+        `You are loosing ${lossPercent}% by not using ${titleCase(quotes[0].adapter.name)}`,
+      );
+    }
+
+    // Check price impact
+    if (fromTokenPrice) {
+      const amountInUSD = new Decimal(fromTokenPrice)
+        .mul(from.amount)
+        .toDecimalPlaces(2)
+        .toNumber();
+
+      const priceImpact =
+        amountInUSD / Number(quote.estimatedAmountAfterFeesUSD) - 1;
+
+      if (priceImpact > 0.01) {
+        warningsList.push(
+          `Price impact is ${Math.abs(Math.round(priceImpact * 100 * 100) / 100)}%, consider using a different route`,
         );
-      }
-
-      if (fromTokenPrice) {
-        const amountInUSD = new Decimal(fromTokenPrice)
-          .mul(from.amount)
-          .toDecimalPlaces(2)
-          .toNumber();
-
-        const priceImpact =
-          amountInUSD / Number(quote.estimatedAmountAfterFeesUSD) - 1;
-
-        const isImpactMoreThan1Percent = priceImpact > 0.01;
-        if (isImpactMoreThan1Percent) {
-          warnings.push(
-            `Price impact is ${Math.abs(Math.round(priceImpact * 100 * 100) / 100)}%, consider using a different route`,
-          );
-        }
       }
     }
 
-    setWarnings(warnings);
+    return warningsList;
   }, [selectedAdapter, from.amount, fromTokenPrice, quotes]);
 
   return (
