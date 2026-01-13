@@ -88,7 +88,12 @@ export default function BridgeAggregatorPage() {
   ]);
 
   const exchangeRate = useMemo(() => {
-    if (!from.amount || !to.token?.decimals || quotes.length === 0)
+    if (
+      !from.amount ||
+      new Decimal(from.amount).isZero() ||
+      !to.token?.decimals ||
+      quotes.length === 0
+    )
       return { rate: "0", rateUSD: "0" };
 
     let selectedQuote: QuoteWithAmount | undefined;
