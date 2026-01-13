@@ -12,8 +12,7 @@ export interface QuoteRequest {
 
 export interface Quote {
   adapter: { name: string; logo: string };
-  tokenApprovalAddress?: Hex;
-  estimatedFeeUSD: string;
+  tokenSpenderAddress?: Hex;
   estimatedTime: number;
   estimatedAmount: string;
   gasEstimate: string;

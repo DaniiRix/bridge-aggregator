@@ -152,14 +152,9 @@ export class NearAdapter extends BaseAdapter {
       data: encodedFnData,
     });
 
-    const amountInUsd = Number(quote?.amountInUsd) || 0;
-    const amountOutUsd = Number(quote?.amountOutUsd) || 0;
-    const estimatedFeeUSD = (amountInUsd - amountOutUsd).toFixed(4);
-
     return {
       adapter: { name: this.name, logo: this.logo },
-      tokenApprovalAddress: undefined,
-      estimatedFeeUSD,
+      tokenSpenderAddress: undefined,
       estimatedTime: quote?.timeEstimate || 0,
       estimatedAmount: quote?.amountOut || "0",
       gasEstimate: estimatedGas?.toString() || "0",

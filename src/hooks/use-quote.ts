@@ -3,28 +3,18 @@ import Decimal from "decimal.js-light";
 import { type Address, formatUnits, getAddress, parseUnits } from "viem";
 import { useConnection, useGasPrice } from "wagmi";
 import { getQuotesFromServer } from "@/lib/actions/quote";
-import { BridgeAggregator } from "@/lib/aggregator";
-import { AcrossAdapter } from "@/lib/aggregator/adapters/across";
+import { bridgeAggregator } from "@/lib/aggregator";
 import type {
   Quote,
   QuoteRequest,
   QuoteWithAmount,
 } from "@/lib/aggregator/adapters/base";
-import { NearAdapter } from "@/lib/aggregator/adapters/near";
-import { RelayAdapter } from "@/lib/aggregator/adapters/relay";
 import type { BridgeState } from "@/store/bridge";
 import { useBridge } from "@/store/bridge";
 import { usePrivacy } from "@/store/privacy";
 import { useSlippage } from "@/store/slippage";
 import { useDebounce } from "./use-debounce";
 import { useTokensPrice } from "./use-token-price";
-
-export const bridgeAggregator = new BridgeAggregator(
-  [new AcrossAdapter(), new RelayAdapter(), new NearAdapter()],
-  {
-    timeout: 10000,
-  },
-);
 
 export const QUOTES_REFETCH_TIME_MS =
   process.env.NODE_ENV === "development" ? 200_000 : 25_000;

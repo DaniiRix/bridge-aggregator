@@ -13,7 +13,8 @@ import {
   useWriteContract,
 } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
-import { bridgeAggregator, useQuote } from "@/hooks/use-quote";
+import { useQuote } from "@/hooks/use-quote";
+import { bridgeAggregator } from "@/lib/aggregator";
 import { wagmiConfig } from "@/lib/providers";
 import { useBridge } from "@/store/bridge";
 import { toaster } from "./ui/toaster";
@@ -65,7 +66,7 @@ export const BridgeAction = () => {
       !from.token ||
       !from.amount ||
       !selectedQuote ||
-      !selectedQuote.tokenApprovalAddress
+      !selectedQuote.tokenSpenderAddress
     )
       return;
 
@@ -74,7 +75,7 @@ export const BridgeAction = () => {
       abi: erc20Abi,
       functionName: "approve",
       args: [
-        selectedQuote.tokenApprovalAddress as Address,
+        selectedQuote.tokenSpenderAddress as Address,
         parseUnits(from.amount, from.token.decimals),
       ],
     });
@@ -109,13 +110,13 @@ export const BridgeAction = () => {
       const selectedQuote = quotes.find(
         (q) => q.adapter.name === selectedAdapter,
       );
-      if (!selectedQuote || !selectedQuote.tokenApprovalAddress) return 0;
+      if (!selectedQuote || !selectedQuote.tokenSpenderAddress) return 0;
 
       const allowance = await readContract(wagmiConfig, {
         address: from.token.address as Address,
         abi: erc20Abi,
         functionName: "allowance",
-        args: [address, selectedQuote.tokenApprovalAddress as Address],
+        args: [address, selectedQuote.tokenSpenderAddress as Address],
       });
 
       return allowance;

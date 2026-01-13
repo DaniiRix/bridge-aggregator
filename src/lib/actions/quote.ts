@@ -1,6 +1,6 @@
 "use server";
 
-import { bridgeAggregator } from "@/hooks/use-quote";
+import { bridgeAggregator } from "../aggregator";
 import type { Quote, QuoteRequest } from "../aggregator/adapters/base";
 
 export const getQuotesFromServer = async (

@@ -1,11 +1,15 @@
 import type { Hex } from "viem";
+import { AcrossAdapter } from "./adapters/across";
 import type { BaseAdapter, Quote, QuoteRequest } from "./adapters/base";
+import { BungeeAdapter } from "./adapters/bungee";
+import { NearAdapter } from "./adapters/near";
+import { RelayAdapter } from "./adapters/relay";
 
-export interface AggregatorConfig {
+interface AggregatorConfig {
   timeout?: number;
 }
 
-export class BridgeAggregator {
+class BridgeAggregator {
   private adapters: Map<string, BaseAdapter> = new Map();
   private config: Required<AggregatorConfig>;
 
@@ -73,7 +77,7 @@ export class BridgeAggregator {
 
         if (!supported) {
           return {
-            error: new Error("Route not supported"),
+            error: new Error(`Route not supported by ${adapter.name}`),
           };
         }
       }
@@ -102,3 +106,15 @@ export class BridgeAggregator {
     return Promise.race([promise, timeoutPromise]);
   }
 }
+
+export const bridgeAggregator = new BridgeAggregator(
+  [
+    new AcrossAdapter(),
+    new RelayAdapter(),
+    new NearAdapter(),
+    new BungeeAdapter(),
+  ],
+  {
+    timeout: 10000,
+  },
+);
