@@ -4,6 +4,7 @@ import type { BaseAdapter, Quote, QuoteRequest } from "./adapters/base";
 import { BungeeAdapter } from "./adapters/bungee";
 import { NearAdapter } from "./adapters/near";
 import { RelayAdapter } from "./adapters/relay";
+import { StargateAdapter } from "./adapters/stargate";
 
 interface AggregatorConfig {
   timeout?: number;
@@ -113,6 +114,7 @@ export const bridgeAggregator = new BridgeAggregator(
     new RelayAdapter(),
     new NearAdapter(),
     new BungeeAdapter(),
+    new StargateAdapter(),
   ],
   {
     timeout: 10000,

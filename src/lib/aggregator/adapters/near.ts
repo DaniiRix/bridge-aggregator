@@ -138,7 +138,6 @@ export class NearAdapter extends BaseAdapter {
 
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      console.log({ errorData });
       throw new Error(
         `[Relay] Error fetching quote: ${errorData.message || res.statusText}`,
       );

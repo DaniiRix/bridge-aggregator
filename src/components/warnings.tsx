@@ -34,8 +34,8 @@ export const Warnings = () => {
         .sub(quote.estimatedAmountAfterFeesUSD)
         .div(quotes[0].estimatedAmountAfterFeesUSD)
         .mul(100)
-        .toDecimalPlaces(2)
-        .toNumber();
+        .toDecimalPlaces(3)
+        .toString();
 
       warningsList.push(
         `You are loosing ${lossPercent}% by not using ${titleCase(quotes[0].adapter.name)}`,

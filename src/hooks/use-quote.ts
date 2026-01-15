@@ -128,6 +128,12 @@ const getQuotes = async (
       .toDecimalPlaces(4)
       .toString();
 
+    console.log({
+      adapter: q.adapter.name,
+      gasFeesUSD,
+      estimatedAmountAfterFeesUSD,
+    });
+
     return {
       ...q,
       estimatedAmountUSD: estimatedAmountUSD.toDecimalPlaces(2).toString(),
@@ -136,9 +142,6 @@ const getQuotes = async (
   });
 
   const sortedQuotes = quotesWithAmount.sort((a, b) => {
-    if (a.gasEstimate === "0" && b.gasEstimate !== "0") return 1;
-    if (a.gasEstimate !== "0" && b.gasEstimate === "0") return -1;
-
     return (
       parseFloat(b.estimatedAmountAfterFeesUSD || "0") -
       parseFloat(a.estimatedAmountAfterFeesUSD || "0")

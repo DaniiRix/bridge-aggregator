@@ -56,13 +56,18 @@ export class RelayAdapter extends BaseAdapter {
     const dataTx = data.steps[0]?.items[0]?.data;
     if (!dataTx) throw new Error("No data found");
 
-    const estimatedGas = await estimateGas(wagmiConfig, {
-      chainId: srcChainId,
-      account: sender,
-      to: dataTx.to,
-      data: dataTx.data,
-      value: dataTx.value ? BigInt(dataTx.value) : undefined,
-    });
+    let estimatedGas = BigInt(0);
+    try {
+      estimatedGas = await estimateGas(wagmiConfig, {
+        chainId: srcChainId,
+        account: sender,
+        to: dataTx.to,
+        data: dataTx.data,
+        value: dataTx.value ? BigInt(dataTx.value) : undefined,
+      });
+    } catch (error) {
+      console.warn("[Relay] Failed to estimate gas", error);
+    }
 
     return {
       adapter: { name: this.name, logo: this.logo },

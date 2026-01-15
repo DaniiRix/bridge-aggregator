@@ -99,14 +99,8 @@ const RouteItem = ({
     .sub(quote.estimatedAmountAfterFeesUSD)
     .div(topQuote.estimatedAmountAfterFeesUSD)
     .mul(100)
-    .toDecimalPlaces(2)
+    .toDecimalPlaces(3)
     .toNumber();
-
-  console.log({
-    topQuote: topQuote.estimatedAmountAfterFeesUSD,
-    quote,
-    lossPercent,
-  });
 
   return (
     <MotionBox

@@ -48,18 +48,16 @@ export class AcrossAdapter extends BaseAdapter {
       throw new Error("Swap simulation failed");
     }
 
-    console.log({ acrossSwapTx: data.swapTx });
-
     return {
       adapter: { name: this.name, logo: this.logo },
-      tokenSpenderAddress: data?.checks.allowance.spender,
+      tokenSpenderAddress: data?.checks?.allowance?.spender,
       estimatedTime: data.expectedFillTime || 0,
       estimatedAmount: data.expectedOutputAmount || "0",
-      gasEstimate: data.swapTx.gas || "0",
+      gasEstimate: data?.swapTx?.gas || "0",
       txRequest: {
-        to: data.swapTx.to,
-        data: data.swapTx.data,
-        value: data.swapTx.value ? BigInt(data.swapTx.value) : undefined,
+        to: data?.swapTx?.to,
+        data: data?.swapTx?.data,
+        value: data?.swapTx?.value ? BigInt(data.swapTx.value) : undefined,
       },
     };
   }
