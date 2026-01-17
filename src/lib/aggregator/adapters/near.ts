@@ -5,7 +5,7 @@ import { estimateGas } from "wagmi/actions";
 import { wagmiConfig } from "@/lib/config";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
-type NearRoute = {
+type Token = {
   contractAddress?: string;
   blockchain: string;
   assetId: string;
@@ -17,7 +17,7 @@ export class NearAdapter extends BaseAdapter {
   referrer = "defillama.com";
   tokenListFile = "src/data/near.json";
 
-  private nearRoutes: NearRoute[] | null = null;
+  private tokens: Token[] | null = null;
 
   constructor() {
     super(
@@ -36,59 +36,45 @@ export class NearAdapter extends BaseAdapter {
       );
     }
 
-    const data = await res.json();
+    const data = (await res.json()) as {
+      assetId: number;
+      blockchain: string;
+      contractAddress?: string;
+    }[];
 
-    if (typeof window === "undefined") {
-      const { writeFile, mkdir } = await import("node:fs/promises");
-      const path = await import("node:path");
-      const filePath = path.join(process.cwd(), this.tokenListFile);
-      const dirPath = path.dirname(filePath);
+    const dataToSave = data.map(({ assetId, blockchain, contractAddress }) => ({
+      assetId,
+      blockchain,
+      contractAddress,
+    }));
 
-      await mkdir(dirPath, { recursive: true });
-      await writeFile(filePath, JSON.stringify(data, null, 2));
-    } else {
-      console.warn(
-        "[Near] generateTokenList should only be called in Node.js environment",
-      );
-    }
+    const { writeFile, mkdir } = await import("node:fs/promises");
+    const path = await import("node:path");
+    const filePath = path.join(process.cwd(), this.tokenListFile);
+    const dirPath = path.dirname(filePath);
 
-    return data;
-  }
-
-  private async getNearRoutes(): Promise<NearRoute[]> {
-    if (this.nearRoutes) {
-      return this.nearRoutes;
-    }
-
-    try {
-      const routes = await import("../../../data/near.json");
-      this.nearRoutes = routes.default || routes;
-      return this.nearRoutes || [];
-    } catch (error) {
-      console.warn("[Near] near.json not found, using empty routes");
-      this.nearRoutes = [];
-      return this.nearRoutes;
-    }
+    await mkdir(dirPath, { recursive: true });
+    await writeFile(filePath, JSON.stringify(dataToSave, null, 2));
   }
 
   async supportsRoute(request: QuoteRequest): Promise<boolean> {
     const { srcChainId, dstChainId, inputToken, outputToken } = request;
-    const routes = await this.getNearRoutes();
-    if (!routes || routes.length === 0) return true;
+    const tokens = await this.getTokens();
+    if (!tokens || tokens.length === 0) return true;
 
-    const isInputSupported = routes.some(
-      (route) =>
-        route.contractAddress?.toLowerCase() ===
+    const isInputSupported = tokens.some(
+      (token) =>
+        token.contractAddress?.toLowerCase() ===
           inputToken.address.toLowerCase() &&
-        route.blockchain === this.chainIdToName(srcChainId),
+        token.blockchain === this.chainIdToName(srcChainId),
     );
     if (!isInputSupported) return false;
 
-    const isOutputSupported = routes.some(
-      (route) =>
-        route.contractAddress?.toLowerCase() ===
+    const isOutputSupported = tokens.some(
+      (token) =>
+        token.contractAddress?.toLowerCase() ===
           outputToken.address.toLowerCase() &&
-        route.blockchain === this.chainIdToName(dstChainId),
+        token.blockchain === this.chainIdToName(dstChainId),
     );
     return isOutputSupported;
   }
@@ -239,12 +225,12 @@ export class NearAdapter extends BaseAdapter {
 
   private async getAssetId(chainId: number, address: string): Promise<string> {
     const chainName = this.chainIdToName(chainId);
-    const routes = await this.getNearRoutes();
+    const tokens = await this.getTokens();
 
-    const assetId = routes.find(
-      (route) =>
-        route.contractAddress?.toLowerCase() === address.toLowerCase() &&
-        route.blockchain === chainName,
+    const assetId = tokens.find(
+      (token) =>
+        token.contractAddress?.toLowerCase() === address.toLowerCase() &&
+        token.blockchain === chainName,
     )?.assetId;
 
     if (!assetId) {
@@ -254,5 +240,21 @@ export class NearAdapter extends BaseAdapter {
     }
 
     return assetId;
+  }
+
+  private async getTokens(): Promise<Token[]> {
+    if (this.tokens) {
+      return this.tokens;
+    }
+
+    try {
+      const tokens = await import("../../../data/near.json");
+      this.tokens = tokens.default || tokens;
+      return this.tokens || [];
+    } catch (error) {
+      console.warn("[Near] near.json not found, using empty tokens", error);
+      this.tokens = [];
+      return this.tokens;
+    }
   }
 }

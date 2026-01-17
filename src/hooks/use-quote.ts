@@ -146,12 +146,6 @@ const getQuotes = async (
       .toDecimalPlaces(4)
       .toString();
 
-    console.log({
-      adapter: q.adapter.name,
-      gasFeesUSD,
-      estimatedAmountAfterFeesUSD,
-    });
-
     return {
       ...q,
       estimatedAmountUSD: estimatedAmountUSD.toDecimalPlaces(2).toString(),

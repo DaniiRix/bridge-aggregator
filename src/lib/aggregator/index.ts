@@ -2,6 +2,7 @@ import type { Hex } from "viem";
 import { AcrossAdapter } from "./adapters/across";
 import type { BaseAdapter, Quote, QuoteRequest } from "./adapters/base";
 import { BungeeAdapter } from "./adapters/bungee";
+import { LifiAdapter } from "./adapters/lifi";
 import { NearAdapter } from "./adapters/near";
 import { RangoAdapter } from "./adapters/rango";
 import { RelayAdapter } from "./adapters/relay";
@@ -131,6 +132,7 @@ export const bridgeAggregator = new BridgeAggregator(
     new BungeeAdapter(),
     new StargateAdapter(),
     new RangoAdapter(),
+    new LifiAdapter(),
   ],
   {
     timeout: 10000,

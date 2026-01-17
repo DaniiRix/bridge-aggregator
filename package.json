@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "postinstall": "bun run scripts/generate-token-list.ts",
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "postinstall": "bun run scripts/generate-token-list.ts"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.30.0",
