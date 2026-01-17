@@ -3,6 +3,7 @@ import { AcrossAdapter } from "./adapters/across";
 import type { BaseAdapter, Quote, QuoteRequest } from "./adapters/base";
 import { BungeeAdapter } from "./adapters/bungee";
 import { NearAdapter } from "./adapters/near";
+import { RangoAdapter } from "./adapters/rango";
 import { RelayAdapter } from "./adapters/relay";
 import { StargateAdapter } from "./adapters/stargate";
 
@@ -20,7 +21,7 @@ class BridgeAggregator {
     }
 
     this.config = {
-      timeout: config.timeout ?? 10000,
+      timeout: config.timeout ?? 15000,
     };
   }
 
@@ -129,6 +130,7 @@ export const bridgeAggregator = new BridgeAggregator(
     new NearAdapter(),
     new BungeeAdapter(),
     new StargateAdapter(),
+    new RangoAdapter(),
   ],
   {
     timeout: 10000,
