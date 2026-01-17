@@ -5,7 +5,11 @@ export class AcrossAdapter extends BaseAdapter {
   integratorId = "0xdead"; // @todo: add integrator id
 
   constructor() {
-    super("across", "https://icons.llamao.fi/icons/protocols/across?w=48&q=75");
+    super(
+      "across",
+      "https://icons.llamao.fi/icons/protocols/across?w=48&q=75",
+      true,
+    );
   }
 
   async getQuote(request: QuoteRequest): Promise<Quote> {

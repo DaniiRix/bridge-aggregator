@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import Decimal from "decimal.js-light";
+import { partition } from "lodash";
 import { type Address, formatUnits, parseUnits } from "viem";
 import { useConnection, useGasPrice } from "wagmi";
 import { getQuotesFromServer } from "@/lib/actions/quote";
@@ -108,14 +109,31 @@ const getQuotes = async (
   if (isPrivacyEnabled) {
     quotes = await getQuotesFromServer(request);
   } else {
-    quotes = await bridgeAggregator.getQuotes(request);
+    const adapters = bridgeAggregator.getAdapters();
+    const [usesApiKeyAdapters, doesNotUseApiKeyAdapters] = partition(
+      adapters,
+      (adapter) => adapter.doesUseApiKey,
+    );
+
+    const [quotesFromServer, quotesFromClient] = await Promise.all([
+      getQuotesFromServer(
+        request,
+        usesApiKeyAdapters.map((adapter) => adapter.name),
+      ),
+      bridgeAggregator.getQuotes(
+        request,
+        doesNotUseApiKeyAdapters.map((adapter) => adapter.name),
+      ),
+    ]);
+
+    quotes = [...quotesFromServer, ...quotesFromClient];
   }
 
   console.log({ quotes });
 
   const quotesWithAmount: QuoteWithAmount[] = quotes.map((q) => {
     const estimatedAmountUSD = new Decimal(tokenPrice).mul(
-      formatUnits(BigInt(q.estimatedAmount), to.token!.decimals),
+      formatUnits(BigInt(q.estimatedAmount), to.token?.decimals || 18),
     );
 
     const gasFeesUSD = new Decimal(gasTokenPrice)

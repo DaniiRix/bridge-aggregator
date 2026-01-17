@@ -20,7 +20,11 @@ export class NearAdapter extends BaseAdapter {
   private nearRoutes: NearRoute[] | null = null;
 
   constructor() {
-    super("near", "https://icons.llamao.fi/icons/protocols/near?w=48&q=75");
+    super(
+      "near",
+      "https://icons.llamao.fi/icons/protocols/near?w=48&q=75",
+      true,
+    );
   }
 
   async generateTokenList() {

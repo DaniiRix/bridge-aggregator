@@ -1,3 +1,4 @@
+// get api key from here: https://docs.relay.link/references/api/api-keys
 // ref: https://docs.relay.link/references/api/get-quote-v2
 // for hyperliquid: https://github.com/relayprotocol/relay-kit/blob/522748b8810c3f81d5b9a990485bd7eaf8e8e689/packages/sdk/src/utils/executeSteps/index.ts#L128
 
@@ -8,10 +9,15 @@ import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
 export class RelayAdapter extends BaseAdapter {
   apiEndpoint = "https://api.relay.link";
+  apiKey = ""; // @todo: add api key
   referrer = "defillama.com";
 
   constructor() {
-    super("relay", "https://icons.llamao.fi/icons/protocols/relay?w=48&q=75");
+    super(
+      "relay",
+      "https://icons.llamao.fi/icons/protocols/relay?w=48&q=75",
+      true,
+    );
   }
 
   async getQuote(request: QuoteRequest): Promise<Quote> {
@@ -31,6 +37,7 @@ export class RelayAdapter extends BaseAdapter {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        // "x-api-key": this.apiKey, // @todo: add api key
       },
       body: JSON.stringify({
         tradeType: "EXACT_INPUT",

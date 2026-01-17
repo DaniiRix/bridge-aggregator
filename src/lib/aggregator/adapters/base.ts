@@ -34,6 +34,7 @@ export abstract class BaseAdapter {
   constructor(
     public readonly name: string,
     public readonly logo: string,
+    public readonly doesUseApiKey: boolean = false,
   ) {}
 
   abstract getQuote(request: QuoteRequest): Promise<Quote>;

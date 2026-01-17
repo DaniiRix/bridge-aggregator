@@ -36,10 +36,24 @@ class BridgeAggregator {
     await Promise.all(promises);
   }
 
-  async getQuotes(request: QuoteRequest): Promise<Quote[]> {
-    const quotePromises = Array.from(this.adapters.values()).map((adapter) =>
-      this.getQuote(adapter, request),
-    );
+  getAdapters(): { name: string; doesUseApiKey: boolean }[] {
+    return Array.from(this.adapters.values()).map((adapter) => ({
+      name: adapter.name,
+      doesUseApiKey: adapter.doesUseApiKey,
+    }));
+  }
+
+  async getQuotes(
+    request: QuoteRequest,
+    adapters?: string[],
+  ): Promise<Quote[]> {
+    const adaptersToUse = adapters ?? Array.from(this.adapters.keys());
+
+    const quotePromises = adaptersToUse.map((adapter) => {
+      const adapterInstance = this.adapters.get(adapter);
+      if (!adapterInstance) throw new Error("Adapter not found");
+      return this.getQuote(adapterInstance, request);
+    });
 
     const results = await Promise.allSettled(quotePromises);
     const quotes: Quote[] = [];
