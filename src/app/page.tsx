@@ -14,7 +14,15 @@ import {
 import Decimal from "decimal.js-light";
 import { ArrowLeft } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useId, useMemo, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { formatUnits } from "viem";
 import { BridgeAction } from "@/components/bridge-action";
 import { NoRouteFound, RouteList, RouteNotSelected } from "@/components/route";
@@ -65,6 +73,15 @@ export default function BridgeAggregatorPage() {
   } = useQuote();
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputBoxRef = useRef<HTMLDivElement>(null);
+  const [inputBoxHeight, setInputBoxHeight] = useState<number | null>(null);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: height can change
+  useEffect(() => {
+    if (inputBoxRef.current?.offsetHeight) {
+      setInputBoxHeight(inputBoxRef.current.offsetHeight);
+    }
+  }, [inputBoxRef.current?.offsetHeight]);
 
   const userTokensBalance = useMemo(() => {
     if (!from.token || !to.token) return { from: "0", to: "0" };
@@ -218,6 +235,8 @@ export default function BridgeAggregatorPage() {
     );
   };
 
+  console.log({ inputBoxHeight });
+
   return (
     <Container
       maxW="100%"
@@ -230,14 +249,15 @@ export default function BridgeAggregatorPage() {
         direction="row"
         gap={6}
         justify="center"
-        align="flex-stretch"
+        align="stretch"
         w="100%"
         position="relative"
       >
         <Box
+          ref={inputBoxRef}
           w="100%"
           maxW="30rem"
-          height="fit-content"
+          h="fit-content"
           borderRadius="xl"
           border="1px solid"
           borderColor="gray.700"
@@ -448,8 +468,9 @@ export default function BridgeAggregatorPage() {
 
         <MotionBox
           w="100%"
-          h="100%"
           maxW="30rem"
+          h="auto"
+          maxH={inputBoxHeight ? `${inputBoxHeight}px` : "auto"}
           bg="gray.800"
           borderRadius="xl"
           border="1px solid"

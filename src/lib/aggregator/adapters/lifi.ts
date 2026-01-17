@@ -78,7 +78,7 @@ export class LifiAdapter extends BaseAdapter {
     super(
       "li.fi",
       "https://icons.llamao.fi/icons/protocols/li.fi?w=48&q=75",
-      false,
+      true,
     );
   }
 

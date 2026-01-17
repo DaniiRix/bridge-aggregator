@@ -66,7 +66,7 @@ export class RangoAdapter extends BaseAdapter {
     super(
       "rango",
       "https://icons.llamao.fi/icons/protocols/rango?w=48&q=75",
-      false,
+      true,
     );
   }
 
@@ -119,13 +119,13 @@ export class RangoAdapter extends BaseAdapter {
     }
 
     const data = await res.json();
-    if (data?.error) {
+    if (data?.error || data.resultType !== "OK") {
       throw new Error(`[Rango] Error fetching quote: ${data.error}`);
     }
 
     return {
       adapter: { name: this.name, logo: this.logo },
-      tokenSpenderAddress: data?.tx?.approveTo,
+      tokenSpenderAddress: data?.tx?.txTo,
       estimatedTime: data?.route?.estimatedTimeInSeconds || 0,
       estimatedAmount: data?.route?.outputAmount || "0",
       gasEstimate: BigInt(data?.tx?.gasLimit || "0").toString(),
