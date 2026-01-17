@@ -142,7 +142,7 @@ export class StargateAdapter extends BaseAdapter {
     return {
       adapter: { name: this.name, logo: this.logo },
       tokenSpenderAddress: spender,
-      estimatedTime: data.duration?.estimated || 0,
+      estimatedTime: data.quotes[0]?.duration?.estimated || 0,
       estimatedAmount: data.quotes[0]?.dstAmount || "0",
       gasEstimate: "0",
       txRequest: {

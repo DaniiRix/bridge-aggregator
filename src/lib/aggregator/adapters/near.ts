@@ -2,7 +2,7 @@
 
 import { encodeFunctionData, erc20Abi, type Hex } from "viem";
 import { estimateGas } from "wagmi/actions";
-import { wagmiConfig } from "@/lib/providers";
+import { wagmiConfig } from "@/lib/config";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
 type NearRoute = {
@@ -156,12 +156,17 @@ export class NearAdapter extends BaseAdapter {
       args: [quote?.depositAddress, quote?.amountIn],
     });
 
-    const estimatedGas = await estimateGas(wagmiConfig, {
-      chainId: srcChainId,
-      account: sender,
-      to: quote?.depositAddress,
-      data: encodedFnData,
-    });
+    let estimatedGas = BigInt(0);
+    try {
+      estimatedGas = await estimateGas(wagmiConfig, {
+        chainId: srcChainId,
+        account: sender,
+        to: quote?.depositAddress,
+        data: encodedFnData,
+      });
+    } catch (error) {
+      console.warn("[Near] Failed to estimate gas", error);
+    }
 
     return {
       adapter: { name: this.name, logo: this.logo },

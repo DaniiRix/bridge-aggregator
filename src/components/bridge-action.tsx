@@ -15,7 +15,7 @@ import {
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { useQuote } from "@/hooks/use-quote";
 import { bridgeAggregator } from "@/lib/aggregator";
-import { wagmiConfig } from "@/lib/providers";
+import { wagmiConfig } from "@/lib/config";
 import { useBridge } from "@/store/bridge";
 import { toaster } from "./ui/toaster";
 

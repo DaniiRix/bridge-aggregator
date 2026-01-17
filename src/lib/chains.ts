@@ -50,7 +50,7 @@ const base = {
   iconBackground: "#000",
 };
 
-export const allChains: Array<WagmiChain> = [
+export const allChains: readonly [WagmiChain, ...WagmiChain[]] = [
   ethereum,
   arbitrum,
   polygon,

@@ -3,7 +3,7 @@
 // for hyperliquid: https://github.com/relayprotocol/relay-kit/blob/522748b8810c3f81d5b9a990485bd7eaf8e8e689/packages/sdk/src/utils/executeSteps/index.ts#L128
 
 import { estimateGas } from "wagmi/actions";
-import { wagmiConfig } from "@/lib/providers";
+import { wagmiConfig } from "@/lib/config";
 import { detectWalletType } from "@/utils/wallet";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 

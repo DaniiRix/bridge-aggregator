@@ -1,6 +1,6 @@
 import type { Hex } from "viem";
 import { getBytecode, getCapabilities } from "wagmi/actions";
-import { wagmiConfig } from "@/lib/providers";
+import { wagmiConfig } from "@/lib/config";
 
 export const detectWalletType = async (
   address?: Hex,
