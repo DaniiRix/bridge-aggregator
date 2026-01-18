@@ -2,79 +2,61 @@
 
 import { encodeFunctionData, erc20Abi, type Hex } from "viem";
 import { estimateGas } from "wagmi/actions";
+import type { NearToken } from "@/lib/actions/token-list";
 import { wagmiConfig } from "@/lib/config";
+import { normalizeAddress } from "@/utils/string";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
-type Token = {
-  contractAddress?: string;
-  blockchain: string;
-  assetId: string;
+const CHAIN_NAME_MAP: Record<number, string> = {
+  1: "eth",
+  56: "bsc",
+  137: "pol",
+  42161: "arb",
+  10: "op",
+  8453: "base",
+  43114: "avax",
+  100: "gnosis",
+  59144: "linea",
+  534352: "scroll",
+  324: "zksync",
+  80094: "bera",
+  143: "monad",
 };
 
 export class NearAdapter extends BaseAdapter {
   apiKey = "YOUR_SECRET_TOKEN";
   apiEndpoint = "https://1click.chaindefuser.com";
   referrer = "defillama.com";
-  tokenListFile = "src/data/near.json";
-
-  private tokens: Token[] | null = null;
 
   constructor() {
     super(
       "near",
       "https://icons.llamao.fi/icons/protocols/near?w=48&q=75",
       true,
+      "https://1click.chaindefuser.com/v0/tokens",
     );
-  }
-
-  async generateTokenList() {
-    const res = await fetch(`${this.apiEndpoint}/v0/tokens`);
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(
-        `[Near] Error fetching token list: ${errorData.message || res.statusText}`,
-      );
-    }
-
-    const data = (await res.json()) as {
-      assetId: number;
-      blockchain: string;
-      contractAddress?: string;
-    }[];
-
-    const dataToSave = data.map(({ assetId, blockchain, contractAddress }) => ({
-      assetId,
-      blockchain,
-      contractAddress,
-    }));
-
-    const { writeFile, mkdir } = await import("node:fs/promises");
-    const path = await import("node:path");
-    const filePath = path.join(process.cwd(), this.tokenListFile);
-    const dirPath = path.dirname(filePath);
-
-    await mkdir(dirPath, { recursive: true });
-    await writeFile(filePath, JSON.stringify(dataToSave, null, 2));
   }
 
   async supportsRoute(request: QuoteRequest): Promise<boolean> {
     const { srcChainId, dstChainId, inputToken, outputToken } = request;
-    const tokens = await this.getTokens();
+    const srcChainName = CHAIN_NAME_MAP[srcChainId];
+    const dstChainName = CHAIN_NAME_MAP[dstChainId];
+    if (!srcChainName || !dstChainName) return false;
+
+    const tokens = (await this.getTokens()) as Required<NearToken>[];
     if (!tokens || tokens.length === 0) return true;
 
     const isInputSupported = tokens.some(
       (token) =>
-        token.contractAddress?.toLowerCase() ===
-          inputToken.address.toLowerCase() &&
-        token.blockchain === this.chainIdToName(srcChainId),
+        token.contractAddress === normalizeAddress(inputToken.address) &&
+        token.blockchain === srcChainName,
     );
     if (!isInputSupported) return false;
 
     const isOutputSupported = tokens.some(
       (token) =>
-        token.contractAddress?.toLowerCase() ===
-          outputToken.address.toLowerCase() &&
-        token.blockchain === this.chainIdToName(dstChainId),
+        token.contractAddress === outputToken.address.toLowerCase() &&
+        token.blockchain === dstChainName,
     );
     return isOutputSupported;
   }
@@ -91,14 +73,10 @@ export class NearAdapter extends BaseAdapter {
       amount,
     } = request;
 
-    const inputTokenAssetId = await this.getAssetId(
-      srcChainId,
-      inputToken.address,
-    );
-    const outputTokenAssetId = await this.getAssetId(
-      dstChainId,
-      outputToken.address,
-    );
+    const [inputTokenAssetId, outputTokenAssetId] = await Promise.all([
+      this.getAssetId(srcChainId, inputToken.address),
+      this.getAssetId(dstChainId, outputToken.address),
+    ]);
 
     const deadline = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 minutes
 
@@ -172,65 +150,42 @@ export class NearAdapter extends BaseAdapter {
   }
 
   async postBridge(quote: Quote, srcTxHash: Hex): Promise<void> {
-    const res = await fetch(`${this.apiEndpoint}/v0/deposit/submit`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        txHash: srcTxHash,
-        depositAddress: quote.extraData?.depositAddress,
-      }),
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(
-        `[Near] Error submitting deposit transaction: ${errorData.message || res.statusText}`,
-      );
-    }
-  }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
-  private chainIdToName(chainId: number): string {
-    switch (chainId) {
-      case 1:
-        return "eth";
-      case 56:
-        return "bsc";
-      case 137:
-        return "pol";
-      case 42161:
-        return "arb";
-      case 10:
-        return "op";
-      case 8453:
-        return "base";
-      case 43114:
-        return "avax";
-      case 100:
-        return "gnosis";
-      case 59144:
-        return "linea";
-      case 534352:
-        return "scroll";
-      case 324:
-        return "zksync";
-      case 80094:
-        return "bera";
-      case 143:
-        return "monad";
-      default:
-        return "unknown";
+    try {
+      const res = await fetch(`${this.apiEndpoint}/v0/deposit/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          txHash: srcTxHash,
+          depositAddress: quote.extraData?.depositAddress,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error(
+          `[Near] Error submitting deposit transaction: ${errorData.message || res.statusText}`,
+        );
+      }
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
   private async getAssetId(chainId: number, address: string): Promise<string> {
-    const chainName = this.chainIdToName(chainId);
-    const tokens = await this.getTokens();
+    const chainName = CHAIN_NAME_MAP[chainId];
+
+    const tokens = (await this.getTokens()) as Required<NearToken>[];
 
     const assetId = tokens.find(
       (token) =>
-        token.contractAddress?.toLowerCase() === address.toLowerCase() &&
+        token.contractAddress === address.toLowerCase() &&
         token.blockchain === chainName,
     )?.assetId;
 
@@ -241,21 +196,5 @@ export class NearAdapter extends BaseAdapter {
     }
 
     return assetId;
-  }
-
-  private async getTokens(): Promise<Token[]> {
-    if (this.tokens) {
-      return this.tokens;
-    }
-
-    try {
-      const tokens = await import("../../../data/near.json");
-      this.tokens = tokens.default || tokens;
-      return this.tokens || [];
-    } catch (error) {
-      console.warn("[Near] near.json not found, using empty tokens", error);
-      this.tokens = [];
-      return this.tokens;
-    }
   }
 }

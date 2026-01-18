@@ -1,4 +1,5 @@
 import type { Hex } from "viem";
+import { getTokensList } from "@/lib/actions/token-list";
 import type { Token } from "@/store/bridge";
 
 export interface QuoteRequest {
@@ -36,6 +37,7 @@ export abstract class BaseAdapter {
     public readonly name: string,
     public readonly logo: string,
     public readonly doesUseApiKey: boolean = false,
+    public readonly tokenFetchApi?: string,
   ) {}
 
   abstract getQuote(request: QuoteRequest): Promise<Quote>;
@@ -44,4 +46,20 @@ export abstract class BaseAdapter {
 
   generateTokenList?(): Promise<void>;
   async supportsRoute?(request: QuoteRequest): Promise<boolean>;
+
+  protected async getTokens() {
+    if (!this.tokenFetchApi)
+      throw new Error(`${this.name} does not support token list`);
+
+    try {
+      const tokens = await getTokensList(this.name);
+      return tokens || [];
+    } catch (error) {
+      console.warn(
+        `${this.name} token list not found, using empty tokens`,
+        error,
+      );
+      return [];
+    }
+  }
 }

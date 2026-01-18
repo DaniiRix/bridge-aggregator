@@ -22,20 +22,12 @@ class BridgeAggregator {
     }
 
     this.config = {
-      timeout: config.timeout ?? 15000,
+      timeout: config.timeout ?? 10000,
     };
   }
 
-  async generateTokenList() {
-    const promises = Array.from(this.adapters.values()).map((adapter) => {
-      if (adapter.generateTokenList) {
-        return adapter.generateTokenList();
-      }
-
-      return Promise.resolve();
-    });
-
-    await Promise.all(promises);
+  getTokenFetchApi(adapter: string) {
+    return this.adapters.get(adapter)?.tokenFetchApi;
   }
 
   getAdapters(): { name: string; doesUseApiKey: boolean }[] {

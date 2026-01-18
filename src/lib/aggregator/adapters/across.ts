@@ -1,4 +1,32 @@
+import type { ChainTokenMap } from "@/lib/actions/token-list";
+import { normalizeAddress } from "@/utils/string";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
+
+const SUPPORTED_CHAINS = [
+  1, // Ethereum
+  10, // Optimism
+  137, // Polygon
+  42161, // Arbitrum
+  324, // zkSync
+  8453, // Base
+  59144, // Linea
+  34443, // Mode
+  81457, // Blast
+  1135, // Lisk
+  534352, // Scroll
+  7777777, // Zora
+  480, // World Chain
+  57073, // Ink
+  1868, // Soneium
+  130, // Unichain
+  232, // Lens
+  56, // BNB Smart Chain
+  34268394551451, // Solana
+  999, // HyperEVM
+  9745, // Plasma
+  143, // Monad
+  1337, // HyperCore
+];
 
 export class AcrossAdapter extends BaseAdapter {
   apiEndpoint = "https://app.across.to/api";
@@ -9,7 +37,29 @@ export class AcrossAdapter extends BaseAdapter {
       "across",
       "https://icons.llamao.fi/icons/protocols/across?w=48&q=75",
       true,
+      "https://app.across.to/api/swap/tokens",
     );
+  }
+
+  async supportsRoute(request: QuoteRequest): Promise<boolean> {
+    const { srcChainId, dstChainId, inputToken, outputToken } = request;
+    if (
+      !SUPPORTED_CHAINS.includes(srcChainId) ||
+      !SUPPORTED_CHAINS.includes(dstChainId)
+    )
+      return false;
+
+    const tokens = (await this.getTokens()) as ChainTokenMap;
+
+    const isInputSupported = tokens[srcChainId].some(
+      (token) => token === normalizeAddress(inputToken.address),
+    );
+    if (!isInputSupported) return false;
+
+    const isOutputSupported = tokens[dstChainId].some(
+      (token) => token === normalizeAddress(outputToken.address),
+    );
+    return isOutputSupported;
   }
 
   async getQuote(request: QuoteRequest): Promise<Quote> {
