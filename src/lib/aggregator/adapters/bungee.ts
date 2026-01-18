@@ -104,6 +104,7 @@ export class BungeeAdapter extends BaseAdapter {
       inputToken,
       outputToken,
       sender,
+      recipient,
       amount,
     } = request;
 
@@ -123,7 +124,7 @@ export class BungeeAdapter extends BaseAdapter {
     url.searchParams.set("inputToken", inToken);
     url.searchParams.set("outputToken", outToken);
     url.searchParams.set("inputAmount", amount);
-    url.searchParams.set("receiverAddress", sender);
+    url.searchParams.set("receiverAddress", recipient);
     url.searchParams.set("slippage", String(slippagePercent));
     url.searchParams.set("useInbox", String(true)); // using approval flow instead of permit 2
     url.searchParams.set("enableMultipleAutoRoutes", String(true));

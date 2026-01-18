@@ -8,6 +8,7 @@ export interface QuoteRequest {
   inputToken: Token;
   outputToken: Token;
   sender: Hex;
+  recipient: Hex;
   amount: string;
 }
 

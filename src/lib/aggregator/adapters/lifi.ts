@@ -142,6 +142,7 @@ export class LifiAdapter extends BaseAdapter {
       inputToken,
       outputToken,
       sender,
+      recipient,
       amount,
     } = request;
 
@@ -151,7 +152,7 @@ export class LifiAdapter extends BaseAdapter {
     url.searchParams.set("fromToken", inputToken.address);
     url.searchParams.set("toToken", outputToken.address);
     url.searchParams.set("fromAddress", sender);
-    url.searchParams.set("toAddress", sender);
+    url.searchParams.set("toAddress", recipient);
     url.searchParams.set("fromAmount", amount);
     url.searchParams.set("slippage", String(slippagePercent / 100));
     url.searchParams.set("integrator", this.integrator);

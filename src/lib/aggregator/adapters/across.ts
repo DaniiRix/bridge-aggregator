@@ -20,6 +20,7 @@ export class AcrossAdapter extends BaseAdapter {
       inputToken,
       outputToken,
       sender,
+      recipient,
       amount,
     } = request;
 
@@ -31,7 +32,7 @@ export class AcrossAdapter extends BaseAdapter {
     url.searchParams.set("outputToken", outputToken.address);
     url.searchParams.set("destinationChainId", dstChainId.toString());
     url.searchParams.set("depositor", sender);
-    url.searchParams.set("recipient", sender);
+    url.searchParams.set("recipient", recipient);
     url.searchParams.set("skipOriginTxEstimation", "false");
     url.searchParams.set("refundOnOrigin", "true");
     url.searchParams.set("slippage", String(slippagePercent / 100));

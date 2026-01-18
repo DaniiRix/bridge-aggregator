@@ -10,8 +10,8 @@ export const truncate = (str?: string, length = 4) => {
   return str.length <= length ? str : `${str.slice(0, length)}...`;
 };
 
-export const truncateAddress = (address: string, length = 4) =>
-  `${address.slice(0, length + 2)}...${address.slice(-length)}`;
+export const truncateAddress = (address?: string, length = 4) =>
+  address ? `${address.slice(0, length + 2)}...${address.slice(-length)}` : "";
 
 export function normalizeAddress(address: string): string;
 export function normalizeAddress(address?: undefined): undefined;

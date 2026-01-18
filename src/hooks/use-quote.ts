@@ -22,9 +22,8 @@ export const QUOTES_REFETCH_TIME_MS =
 
 export const useQuote = () => {
   const { address } = useConnection();
-
   const { slippagePercent } = useSlippage((state) => state);
-  const { from, to } = useBridge();
+  const { from, to, recipient } = useBridge();
   const { isPrivacyEnabled } = usePrivacy();
 
   const debouncedAmount = useDebounce(from.amount, 500);
@@ -41,10 +40,11 @@ export const useQuote = () => {
       to.token?.chainId,
       to.token?.address,
       debouncedAmount,
+      address,
+      recipient,
     ],
     queryFn: () =>
       getQuotes(
-        address,
         from,
         to,
         debouncedAmount,
@@ -53,6 +53,8 @@ export const useQuote = () => {
         toTokenPrice,
         gasTokenPrice,
         gasPrice,
+        address,
+        recipient,
       ),
     enabled: Boolean(
       address &&
@@ -70,7 +72,6 @@ export const useQuote = () => {
 };
 
 const getQuotes = async (
-  address?: Address,
   from?: BridgeState["from"],
   to?: BridgeState["to"],
   debouncedAmount?: string,
@@ -79,9 +80,11 @@ const getQuotes = async (
   tokenPrice?: string,
   gasTokenPrice?: string,
   gasPrice?: bigint,
+  sender?: Address,
+  recipient?: Address,
 ) => {
   if (
-    !address ||
+    !sender ||
     !from?.chain ||
     !from?.token ||
     !debouncedAmount ||
@@ -101,7 +104,8 @@ const getQuotes = async (
     dstChainId: to.chain.id,
     inputToken: from.token,
     outputToken: to.token,
-    sender: address,
+    sender,
+    recipient: recipient || sender,
     amount: parseUnits(debouncedAmount, from.token.decimals).toString(),
   };
 

@@ -88,6 +88,7 @@ export class RangoAdapter extends BaseAdapter {
       inputToken,
       outputToken,
       sender,
+      recipient,
       amount,
     } = request;
 
@@ -107,7 +108,7 @@ export class RangoAdapter extends BaseAdapter {
     url.searchParams.set("amount", amount);
     url.searchParams.set("slippage", slippagePercent.toString());
     url.searchParams.set("fromAddress", sender);
-    url.searchParams.set("toAddress", sender);
+    url.searchParams.set("toAddress", recipient);
     // url.searchParams.set("referrerCode", this.referrerCode);
 
     const res = await fetch(url.toString());

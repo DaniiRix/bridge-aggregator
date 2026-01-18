@@ -18,13 +18,13 @@ import {
   useCallback,
   useEffect,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { formatUnits } from "viem";
 import { BridgeAction } from "@/components/bridge-action";
+import { RecipientEditor } from "@/components/recipient-editor";
 import { NoRouteFound, RouteList, RouteNotSelected } from "@/components/route";
 import { QuoteSkeleton } from "@/components/skeleton/quote";
 import { SlippageSettings } from "@/components/slippage-settings";
@@ -33,7 +33,6 @@ import { Warnings } from "@/components/warnings";
 import { useQuote } from "@/hooks/use-quote";
 import { useTokenBalance } from "@/hooks/use-token-balance";
 import { useTokensPrice } from "@/hooks/use-token-price";
-import type { QuoteWithAmount } from "@/lib/aggregator/adapters/base";
 import { useBridge } from "@/store/bridge";
 import { usePrivacy } from "@/store/privacy";
 import { formatNumber, isInputGreaterThanDecimals } from "@/utils/number";
@@ -61,7 +60,6 @@ export default function BridgeAggregatorPage() {
     from.chain?.id,
   );
   const { data: tokensWithBalanceOnToChain } = useTokenBalance(to.chain?.id);
-
   const { data: { fromTokenPrice, toTokenPrice } = {} } = useTokensPrice();
 
   const {
@@ -78,9 +76,9 @@ export default function BridgeAggregatorPage() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: height can change
   useEffect(() => {
-    if (inputBoxRef.current?.offsetHeight) {
-      setInputBoxHeight(inputBoxRef.current.offsetHeight);
-    }
+    if (!inputBoxRef.current?.offsetHeight) return;
+
+    setInputBoxHeight(inputBoxRef.current.offsetHeight);
   }, [inputBoxRef.current?.offsetHeight]);
 
   const userTokensBalance = useMemo(() => {
@@ -105,48 +103,36 @@ export default function BridgeAggregatorPage() {
   ]);
 
   const exchangeRate = useMemo(() => {
+    const defaultRate = { rate: "0", rateUSD: "0" };
+
     if (
       !from.amount ||
       new Decimal(from.amount).isZero() ||
       !to.token?.decimals ||
       quotes.length === 0
     )
-      return { rate: "0", rateUSD: "0" };
+      return defaultRate;
 
-    let selectedQuote: QuoteWithAmount | undefined;
+    const selectedQuote = selectedAdapter
+      ? quotes.find((q) => q.adapter.name === selectedAdapter)
+      : quotes[0];
 
-    if (selectedAdapter) {
-      selectedQuote = quotes.find((q) => q.adapter.name === selectedAdapter);
-      if (!selectedQuote) return { rate: "0", rateUSD: "0" };
-    } else {
-      selectedQuote = quotes[0];
-    }
-
-    if (!selectedQuote) return { rate: "0", rateUSD: "0" };
+    if (!selectedQuote) return defaultRate;
 
     const rate = new Decimal(selectedQuote.estimatedAmount)
       .div(new Decimal(10).pow(to.token.decimals))
       .div(from.amount)
       .toDecimalPlaces(4);
 
-    if (rate.isZero()) {
-      return { rate: "0", rateUSD: "0" };
-    }
+    if (rate.isZero()) return defaultRate;
 
     const rateUSD = new Decimal(toTokenPrice || "0")
       .mul(rate)
       .toDecimalPlaces(2)
       .toString();
 
-    if (rate.lt("0.0001")) {
-      return {
-        rate: "< 0.0001",
-        rateUSD,
-      };
-    }
-
     return {
-      rate: rate.toString(),
+      rate: rate.lt("0.0001") ? "< 0.0001" : rate.toString(),
       rateUSD,
     };
   }, [toTokenPrice, from.amount, to.token?.decimals, selectedAdapter, quotes]);
@@ -234,8 +220,6 @@ export default function BridgeAggregatorPage() {
       />
     );
   };
-
-  console.log({ inputBoxHeight });
 
   return (
     <Container
@@ -374,11 +358,7 @@ export default function BridgeAggregatorPage() {
                   border="1px solid transparent"
                   _hover={{ borderColor: "gray.600" }}
                 >
-                  <Flex justify="space-between">
-                    <Text fontSize="sm" color="gray.400">
-                      To
-                    </Text>
-                  </Flex>
+                  <RecipientEditor />
                   <Flex align="center" gap={2} my={2}>
                     <Input
                       flex={1}
@@ -469,7 +449,7 @@ export default function BridgeAggregatorPage() {
         <MotionBox
           w="100%"
           maxW="30rem"
-          h="auto"
+          h="fit-content"
           maxH={inputBoxHeight ? `${inputBoxHeight}px` : "auto"}
           bg="gray.800"
           borderRadius="xl"

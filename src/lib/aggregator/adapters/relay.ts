@@ -28,6 +28,7 @@ export class RelayAdapter extends BaseAdapter {
       inputToken,
       outputToken,
       sender,
+      recipient,
       amount,
     } = request;
 
@@ -47,6 +48,7 @@ export class RelayAdapter extends BaseAdapter {
         destinationCurrency: outputToken.address,
         destinationChainId: dstChainId,
         user: sender,
+        recipient,
         referrer: this.referrer,
         explicitDeposit: !isEOA,
         slippageTolerance: Math.round(slippagePercent * 100),

@@ -88,6 +88,7 @@ export class StargateAdapter extends BaseAdapter {
       inputToken,
       outputToken,
       sender,
+      recipient,
       amount,
     } = request;
 
@@ -102,7 +103,7 @@ export class StargateAdapter extends BaseAdapter {
     url.searchParams.set("srcToken", inputToken.address);
     url.searchParams.set("dstToken", outputToken.address);
     url.searchParams.set("srcAddress", sender);
-    url.searchParams.set("dstAddress", sender);
+    url.searchParams.set("dstAddress", recipient);
     url.searchParams.set("srcChainKey", srcChainKey);
     url.searchParams.set("dstChainKey", dstChainKey);
     url.searchParams.set("srcAmount", amount);

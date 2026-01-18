@@ -87,6 +87,7 @@ export class NearAdapter extends BaseAdapter {
       inputToken,
       outputToken,
       sender,
+      recipient,
       amount,
     } = request;
 
@@ -118,7 +119,7 @@ export class NearAdapter extends BaseAdapter {
         amount,
         refundTo: sender,
         refundType: "ORIGIN_CHAIN",
-        recipient: sender,
+        recipient: recipient,
         recipientType: "DESTINATION_CHAIN",
         deadline,
         referral: this.referrer,

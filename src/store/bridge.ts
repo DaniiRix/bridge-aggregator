@@ -1,3 +1,4 @@
+import type { Hex } from "viem";
 import { create } from "zustand";
 
 export interface Token {
@@ -28,6 +29,7 @@ export type BridgeState = {
     token?: Token;
     amount?: string;
   };
+  recipient?: Hex;
 };
 
 export type BridgeActions = {
@@ -39,6 +41,7 @@ export type BridgeActions = {
   setToChain: (chain: Chain) => void;
   setToToken: (token: Token) => void;
   setToAmount: (amount: string) => void;
+  setRecipient: (recipient: Hex) => void;
   reset: () => void;
 };
 
@@ -91,5 +94,6 @@ export const useBridge = create<BridgeStore>()((set) => ({
       to: { ...state.to, token, amount: "" },
     })),
   setToAmount: (amount) => set((state) => ({ to: { ...state.to, amount } })),
+  setRecipient: (recipient) => set(() => ({ recipient })),
   reset: () => set(defaultInitState),
 }));
