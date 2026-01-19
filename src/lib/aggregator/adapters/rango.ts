@@ -2,33 +2,6 @@
 import { zeroAddress } from "viem";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
-const SUPPORTED_CHAINS = [
-  42161, // Arbitrum
-  1313161554, // Aurora
-  43114, // Avalanche
-  8453, // Base
-  81457, // Blast
-  56288, // Boba BNB
-  56, // BNB
-  42220, // Celo
-  25, // Cronos
-  1, // Ethereum
-  59144, // Linea
-  1088, // Metis
-  34443, // Mode
-  1284, // Moonbeam
-  1285, // Moonriver
-  66, // OKX Chain (OKC)
-  10, // Optimism
-  137, // Polygon
-  1101, // Polygon zkEVM
-  534352, // Scroll
-  324, // zkSync Era
-  146, // Sonic
-  167000, // Taiko
-  7777777, // Zora
-  80094, // Berachain
-];
 const CHAIN_NAME_MAP: Record<number, string> = {
   1: "ETH",
   10: "OPTIMISM",
@@ -73,8 +46,8 @@ export class RangoAdapter extends BaseAdapter {
 
   async supportsRoute(request: QuoteRequest): Promise<boolean> {
     if (
-      !SUPPORTED_CHAINS.includes(request.srcChainId) ||
-      !SUPPORTED_CHAINS.includes(request.dstChainId)
+      !CHAIN_NAME_MAP[request.srcChainId] ||
+      !CHAIN_NAME_MAP[request.dstChainId]
     )
       return false;
 

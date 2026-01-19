@@ -77,7 +77,7 @@ const loadTokens = async (adapter: string, apiEndpoint?: string) => {
 
     return transformedData;
   } catch (error) {
-    console.error(`Failed to save token list: ${error}`);
+    console.error(`Failed to fetch token list: ${error}`);
   } finally {
     clearTimeout(timeout);
   }

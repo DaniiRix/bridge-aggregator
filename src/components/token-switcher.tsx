@@ -144,7 +144,13 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                       Select network
                     </Text>
 
-                    <VStack mt={4} gap={2} alignItems="flex-start">
+                    <VStack
+                      mt={4}
+                      gap={2}
+                      alignItems="flex-start"
+                      maxH="400px"
+                      overflowY="auto"
+                    >
                       {allChains.map((chain) => (
                         <Button
                           key={chain.id}

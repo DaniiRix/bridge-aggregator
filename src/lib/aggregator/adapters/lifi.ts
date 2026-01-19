@@ -73,7 +73,7 @@ export class LifiAdapter extends BaseAdapter {
 
   constructor() {
     super(
-      "li.fi",
+      "lifi",
       "https://icons.llamao.fi/icons/protocols/li.fi?w=48&q=75",
       true,
       `https://li.quest/v1/tokens?chains=${SUPPORTED_CHAINS.join(",")}`,

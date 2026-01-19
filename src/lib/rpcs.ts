@@ -213,6 +213,22 @@ export const rpcUrls: Record<number, Array<string>> = {
     "https://unichain-rpc.publicnode.com",
     "https://mainnet.unichain.org",
   ],
+  999: ["https://rpc.hyperliquid.xyz/evm", "https://hyperliquid.drpc.org"],
+  143: [
+    getLlamaRpc("monad"),
+    "https://rpc.monad.xyz",
+    "https://rpc1.monad.xyz",
+    "https://rpc3.monad.xyz",
+    "https://rpc-mainnet.monadinfra.com",
+  ],
+  57073: [
+    getLlamaRpc("ink"),
+    "https://rpc-gel.inkonchain.com",
+    "https://rpc-ten.inkonchain.com",
+    "https://rpc-qnd.inkonchain.com",
+    "https://ink.drpc.org",
+  ],
+  9745: ["https://rpc.plasma.to", "https://plasma.drpc.org"],
 };
 
 export const rpcsTransports = Object.fromEntries(
