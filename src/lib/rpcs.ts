@@ -29,12 +29,6 @@ export const rpcUrls: Record<number, Array<string>> = {
     "https://endpoints.omniatech.io/v1/matic/mainnet/public",
   ],
   128: [getLlamaRpc("heco"), "https://http-mainnet.hecochain.com"],
-  250: [
-    getLlamaRpc("fantom"),
-    "https://rpcapi.fantom.network",
-    "https://rpc2.fantom.network",
-    "https://fantom-rpc.publicnode.com",
-  ],
   30: [getLlamaRpc("rsk"), "https://public-node.rsk.co"],
   88: [getLlamaRpc("tomochain"), "https://rpc.tomochain.com"],
   100: [
@@ -175,12 +169,6 @@ export const rpcUrls: Record<number, Array<string>> = {
     "https://evm.astar.network",
     "https://rpc.astar.network:8545",
     "https://astar.api.onfinality.io/public",
-  ],
-  7700: [
-    getLlamaRpc("canto"),
-    "https://canto.slingshot.finance",
-    "https://canto.neobase.one",
-    "https://mainnode.plexnode.org:8545",
   ],
   324: [getLlamaRpc("era"), "https://mainnet.era.zksync.io"],
   58: [

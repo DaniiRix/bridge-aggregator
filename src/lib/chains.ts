@@ -1,6 +1,10 @@
 import type { Chain } from "viem";
 import * as wagmiChains from "viem/chains";
-import { chainIconUrl } from "./nativeTokens";
+
+const ICONS_CDN = "https://icons.llamao.fi/icons";
+export function chainIconUrl(chain: string) {
+  return `${ICONS_CDN}/chains/rsz_${chain.toLowerCase()}?w=48&h=48`;
+}
 
 export interface WagmiChain extends Chain {
   network: string;
@@ -79,12 +83,6 @@ const klaytn = {
   ...wagmiChains.klaytn,
   network: "klaytn",
   iconUrl: chainIconUrl("klaytn"),
-  iconBackground: "#000",
-};
-const fantom = {
-  ...wagmiChains.fantom,
-  network: "fantom",
-  iconUrl: chainIconUrl("fantom"),
   iconBackground: "#000",
 };
 
@@ -242,7 +240,6 @@ export const allChains: readonly [WagmiChain, ...WagmiChain[]] = [
   optimism,
   base,
   avax,
-  fantom,
   zksync,
   polygonZKEvm,
   linea,
