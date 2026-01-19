@@ -67,7 +67,7 @@ export const Warnings = () => {
       {warnings?.length > 0 && (
         <MotionVStack
           gap={2}
-          display={{ base: "none", md: "flex" }}
+          display={{ base: "none", lg: "flex" }}
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}

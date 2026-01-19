@@ -132,10 +132,10 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                 templateColumns={`repeat(${selectedChain ? "3" : "1"}, 1fr)`}
               >
                 <GridItem
-                  colSpan={{ base: 3, md: 1 }}
+                  colSpan={{ base: 3, lg: 1 }}
                   display={{
                     base: selectedChain ? "none" : "block",
-                    md: "block",
+                    lg: "block",
                   }}
                 >
                   <Box
@@ -191,7 +191,7 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                 </GridItem>
 
                 {selectedChain && (
-                  <GridItem colSpan={{ base: 3, md: 2 }}>
+                  <GridItem colSpan={{ base: 3, lg: 2 }}>
                     <Box
                       bg="bg.1"
                       p={4}
@@ -235,6 +235,7 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                         </InputGroup>
 
                         <Button
+                          display={{ base: "block", lg: "none" }}
                           size="sm"
                           rounded="full"
                           bg="bg.2"

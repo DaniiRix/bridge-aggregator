@@ -26,7 +26,7 @@ export default function RootLayout({
       <body className="antialiased">
         <Providers>
           <Container
-            p={{ base: 4, md: 6 }}
+            p={{ base: 4, lg: 6 }}
             px={{ base: 0, lg: 10 }}
             maxW="100%"
             minH="100vh"
