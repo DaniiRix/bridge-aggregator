@@ -56,7 +56,7 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
   );
 
   const handleChainSelect = useCallback(
-    (chain: WagmiChain) => {
+    (chain?: WagmiChain) => {
       if (side === "from") {
         setFromChain(chain);
       } else {
@@ -131,7 +131,13 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                 display="grid"
                 templateColumns={`repeat(${selectedChain ? "3" : "1"}, 1fr)`}
               >
-                <GridItem colSpan={1}>
+                <GridItem
+                  colSpan={{ base: 3, md: 1 }}
+                  display={{
+                    base: selectedChain ? "none" : "block",
+                    md: "block",
+                  }}
+                >
                   <Box
                     bg="bg.1"
                     p={4}
@@ -185,7 +191,7 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                 </GridItem>
 
                 {selectedChain && (
-                  <GridItem colSpan={2}>
+                  <GridItem colSpan={{ base: 3, md: 2 }}>
                     <Box
                       bg="bg.1"
                       p={4}
@@ -209,24 +215,46 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                         </IconButton>
                       </Flex>
 
-                      <InputGroup
-                        mt={4}
-                        startElement={<SearchIcon size={18} />}
-                        className="dark"
-                        bg="bg.2"
-                        borderRadius="full"
-                        w="100%"
-                      >
-                        <Input
-                          size="sm"
-                          ref={inputRef}
-                          placeholder="Search token"
-                          value={searchTerm}
-                          color="white"
+                      <Flex align="center" gap={2} mt={4}>
+                        <InputGroup
+                          startElement={<SearchIcon size={18} />}
+                          className="dark"
+                          bg="bg.2"
                           borderRadius="full"
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                      </InputGroup>
+                          w="100%"
+                        >
+                          <Input
+                            size="sm"
+                            ref={inputRef}
+                            placeholder="Search token"
+                            value={searchTerm}
+                            color="white"
+                            borderRadius="full"
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </InputGroup>
+
+                        <Button
+                          size="sm"
+                          rounded="full"
+                          bg="bg.2"
+                          onClick={() => handleChainSelect(undefined)}
+                        >
+                          <Image
+                            src={selectedChain?.iconUrl}
+                            alt={selectedChain?.name}
+                            width="24px"
+                            height="24px"
+                            borderRadius="full"
+                          />
+
+                          <Text fontSize="sm" fontWeight="medium">
+                            {selectedChain.name.length > 10
+                              ? `${selectedChain.name.slice(0, 10)}...`
+                              : selectedChain.name}
+                          </Text>
+                        </Button>
+                      </Flex>
 
                       <TokensList
                         searchTerm={searchTerm}

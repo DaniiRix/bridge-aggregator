@@ -223,11 +223,12 @@ export default function BridgeAggregatorPage() {
 
   return (
     <Container
+      w="auto"
       maxW="100%"
       minH="100%"
       mt={{ base: 5, lg: 10 }}
       py={{ base: 4, md: 9 }}
-      px={{ base: 4, md: 6 }}
+      px={{ base: 2, md: 6 }}
     >
       <Flex
         direction="row"
@@ -449,7 +450,7 @@ export default function BridgeAggregatorPage() {
         <MotionBox
           w="100%"
           maxW="30rem"
-          h="fit-content"
+          h={{ base: "100%", md: "fit-content" }}
           maxH={inputBoxHeight ? `${inputBoxHeight}px` : "auto"}
           bg="gray.800"
           borderRadius="xl"

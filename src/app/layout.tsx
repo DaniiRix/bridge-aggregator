@@ -27,7 +27,7 @@ export default function RootLayout({
         <Providers>
           <Container
             p={{ base: 4, md: 6 }}
-            px={{ lg: 10 }}
+            px={{ base: 0, lg: 10 }}
             maxW="100%"
             minH="100vh"
             bgColor="bg.1"
