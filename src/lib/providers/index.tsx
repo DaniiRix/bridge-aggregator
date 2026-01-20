@@ -26,6 +26,7 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
             <RainbowKitProvider
+              showRecentTransactions={true}
               theme={darkTheme({
                 accentColor: "#2563eb",
                 borderRadius: "medium",
