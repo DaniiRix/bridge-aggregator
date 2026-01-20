@@ -33,10 +33,6 @@ import { titleCase, truncate, truncateAddress } from "@/utils/string";
 import { TokensSkeleton } from "./skeleton/token-switch";
 import { TokenWithChainLogo } from "./ui/dual-token";
 
-const HEADER_HEIGHT = 24;
-const TOKEN_ROW_HEIGHT = 56;
-const MAX_LIST_HEIGHT = 500;
-
 export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
   const { from, to, setFromChain, setToChain } = useBridge();
 
@@ -198,6 +194,7 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
                       border="1px solid"
                       borderColor="bg.3"
                       rounded="lg"
+                      h="100%"
                     >
                       <Flex justify="space-between" align="center">
                         <Text fontSize="lg" fontWeight="semibold" color="white">
@@ -274,6 +271,9 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
   );
 };
 
+const HEADER_HEIGHT = 20;
+const TOKEN_ROW_HEIGHT = 56;
+
 const TokensList = ({
   searchTerm,
   side,
@@ -288,12 +288,14 @@ const TokensList = ({
   const { from, to } = useBridge();
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: tokens = [], isLoading: isTokenLoading } = useTokens(
-    side === "from" ? from.chain?.id : to.chain?.id,
+  const chainId = useMemo(
+    () => (side === "from" ? from.chain?.id : to.chain?.id),
+    [side, from.chain?.id, to.chain?.id],
   );
 
+  const { data: tokens = [], isLoading: isTokenLoading } = useTokens(chainId);
   const { data: tokensWithBalances = [], isLoading: isTokenBalanceLoading } =
-    useTokenBalance(side === "from" ? from.chain?.id : to.chain?.id);
+    useTokenBalance(chainId);
 
   const selectedToken = useMemo(
     () => (side === "from" ? from.token : to.token),
@@ -329,30 +331,36 @@ const TokensList = ({
     );
   }, [filteredTokens, filteredTokensWithBalance]);
 
-  const hasBalanceSection = filteredTokensWithBalance.length > 0;
-  const balanceSectionHeight = hasBalanceSection
-    ? HEADER_HEIGHT + filteredTokensWithBalance.length * TOKEN_ROW_HEIGHT
-    : 0;
+  const topHeight = useMemo(() => {
+    let height = 0;
+
+    if (filteredTokensWithBalance.length > 0) {
+      height += HEADER_HEIGHT;
+      height += filteredTokensWithBalance.length * TOKEN_ROW_HEIGHT;
+    }
+
+    if (tokensWithoutBalance.length > 0) {
+      height += HEADER_HEIGHT;
+    }
+
+    return height;
+  }, [filteredTokensWithBalance.length, tokensWithoutBalance.length]);
 
   const rowVirtualizer = useVirtualizer({
     count: tokensWithoutBalance.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => TOKEN_ROW_HEIGHT,
-    overscan: 10,
+    scrollMargin: topHeight,
   });
 
-  const totalHeight = Math.min(
-    balanceSectionHeight +
-      (tokensWithoutBalance.length > 0 ? HEADER_HEIGHT : 0) +
-      rowVirtualizer.getTotalSize(),
-    MAX_LIST_HEIGHT,
-  );
-
-  if (isTokenLoading || isTokenBalanceLoading) {
+  if (
+    (isTokenLoading && tokens.length === 0) ||
+    (isTokenBalanceLoading && tokensWithBalances.length === 0)
+  ) {
     return <TokensSkeleton />;
   }
 
-  if (filteredTokens.length === 0 && !hasBalanceSection) {
+  if (filteredTokens.length === 0 && filteredTokensWithBalance.length === 0) {
     return (
       <Flex
         w="100%"
@@ -369,63 +377,61 @@ const TokensList = ({
   }
 
   return (
-    <Box
-      ref={parentRef}
-      mt={4}
-      overflowY="auto"
-      w="100%"
-      h={totalHeight}
-      position="relative"
-    >
-      <VStack gap={0} alignItems="flex-start" w="100%">
-        {hasBalanceSection && (
+    <Box mt={4} ref={parentRef} height="420px" overflowY="auto">
+      <Box
+        position="relative"
+        w="100%"
+        h={`${rowVirtualizer.getTotalSize() + topHeight}px`}
+      >
+        {filteredTokensWithBalance.length > 0 && (
           <Box w="100%">
-            <Text fontSize="xs" fontWeight="semibold" color="text.2">
+            <Text
+              fontSize="xs"
+              fontWeight="semibold"
+              color="text.2"
+              h={`${HEADER_HEIGHT}px`}
+            >
               Your tokens
             </Text>
-            <VStack gap={1} alignItems="flex-start" w="100%">
-              {filteredTokensWithBalance.map((token) => (
-                <TokenRow
-                  side={side}
-                  selectedTokenAddress={selectedToken?.address}
-                  token={token}
-                  key={`balance-${token.address}`}
-                  closeDialog={closeDialog}
-                />
-              ))}
-            </VStack>
+            {filteredTokensWithBalance.map((token) => (
+              <TokenRow
+                side={side}
+                selectedTokenAddress={selectedToken?.address}
+                token={token}
+                key={`balance-${token.address}`}
+                closeDialog={closeDialog}
+              />
+            ))}
           </Box>
         )}
 
         {tokensWithoutBalance.length > 0 && (
-          <Box w="100%">
-            <Text fontSize="xs" fontWeight="semibold" color="text.2">
-              All tokens
-            </Text>
-            <Box position="relative" w="100%" h={rowVirtualizer.getTotalSize()}>
-              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                const token = tokensWithoutBalance[virtualRow.index];
-                if (!token) return null;
-
-                return (
-                  <TokenRow
-                    side={side}
-                    selectedTokenAddress={selectedToken?.address}
-                    token={token}
-                    key={`token-${token.address}`}
-                    position="absolute"
-                    top={0}
-                    left={0}
-                    width="100%"
-                    transform={`translateY(${virtualRow.start}px)`}
-                    closeDialog={closeDialog}
-                  />
-                );
-              })}
-            </Box>
-          </Box>
+          <Text
+            fontSize="xs"
+            fontWeight="semibold"
+            color="text.2"
+            h={`${HEADER_HEIGHT}px`}
+          >
+            All tokens
+          </Text>
         )}
-      </VStack>
+
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+          <TokenRow
+            key={`${virtualRow.index}-${tokensWithoutBalance[virtualRow.index].address}`}
+            data-index={virtualRow.index}
+            token={tokensWithoutBalance[virtualRow.index]}
+            side={side}
+            selectedTokenAddress={selectedToken?.address}
+            closeDialog={closeDialog}
+            position="absolute"
+            top={0}
+            left={0}
+            w="100%"
+            transform={`translateY(${virtualRow.start}px)`}
+          />
+        ))}
+      </Box>
     </Box>
   );
 };
