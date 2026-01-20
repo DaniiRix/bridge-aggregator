@@ -108,7 +108,7 @@ export class AcrossAdapter extends BaseAdapter {
       tokenSpenderAddress: data?.checks?.allowance?.spender,
       estimatedTime: data.expectedFillTime || 0,
       estimatedAmount: data.expectedOutputAmount || "0",
-      gasEstimate: data?.swapTx?.gas || "0",
+      gasEstimate: String(data?.swapTx?.gas || "0"),
       txRequest: {
         to: data?.swapTx?.to,
         data: data?.swapTx?.data,

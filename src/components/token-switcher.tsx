@@ -18,7 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronDownIcon, Coins, SearchIcon, XIcon } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import { useDebounce } from "@/hooks/use-debounce";
 import {
@@ -38,6 +38,10 @@ export const TokenSwitcher = ({ side }: { side: "from" | "to" }) => {
 
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    if (!open) setSearchTerm("");
+  }, [open]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 

@@ -182,7 +182,7 @@ export default function BridgeAggregatorPage() {
           <Text fontSize="sm" color="gray.400/80" w="100%">
             Best route is selected based on net output after gas fees.
           </Text>
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {[1, 2, 3, 4, 5].map((i) => (
               <MotionBox
                 key={`skeleton-${i}`}

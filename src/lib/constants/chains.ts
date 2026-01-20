@@ -31,5 +31,7 @@ const chainsMap = {
 } as const;
 
 export const chainIdToName = (chainId: number) => {
-  return Object.entries(chainsMap).find(([, id]) => id === chainId)?.[0];
+  return Object.entries(chainsMap).find(
+    ([, id]) => id === Number(chainId),
+  )?.[0];
 };

@@ -66,7 +66,7 @@ export const RouteList = ({
         />
       </HStack>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {quotes?.map((q, qIdx) => (
           <RouteItem
             key={q.adapter.name}

@@ -114,7 +114,7 @@ export class BungeeAdapter extends BaseAdapter {
       tokenSpenderAddress: route.approvalData?.spenderAddress,
       estimatedTime: route.estimatedTime || 0,
       estimatedAmount: route.output?.amount || "0",
-      gasEstimate: route.gasFee?.gasLimit || "0",
+      gasEstimate: String(route.gasFee?.gasLimit || "0"),
       txRequest: {
         to: route.txData?.to,
         data: route.txData?.data,

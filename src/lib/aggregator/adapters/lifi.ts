@@ -150,7 +150,7 @@ export class LifiAdapter extends BaseAdapter {
       tokenSpenderAddress: data?.estimate?.approvalAddress,
       estimatedTime: data?.estimate?.executionDuration || 0,
       estimatedAmount: data?.estimate?.toAmount || "0",
-      gasEstimate: gasEstimate || "0",
+      gasEstimate: String(gasEstimate || "0"),
       txRequest: {
         to: data?.transactionRequest?.to,
         data: data?.transactionRequest?.data,
