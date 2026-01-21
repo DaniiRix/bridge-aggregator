@@ -65,6 +65,7 @@ export const useQuote = () => {
         debouncedAmount,
     ),
     staleTime: QUOTES_REFETCH_TIME_MS,
+    refetchOnWindowFocus: false,
     refetchInterval: QUOTES_REFETCH_TIME_MS,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

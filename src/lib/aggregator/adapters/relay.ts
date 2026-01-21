@@ -2,8 +2,8 @@
 // ref: https://docs.relay.link/references/api/get-quote-v2
 
 import { estimateGas } from "wagmi/actions";
+import { detectWalletType } from "@/hooks/use-eoa";
 import { wagmiConfig } from "@/lib/config";
-import { detectWalletType } from "@/utils/wallet";
 import { BaseAdapter, type Quote, type QuoteRequest } from "./base";
 
 const SUPPORTED_CHAINS = [
@@ -124,7 +124,10 @@ export class RelayAdapter extends BaseAdapter {
       amount,
     } = request;
 
-    const { isEOA } = await detectWalletType(sender, srcChainId);
+    const { isEOA, isEIP7702Delegated } = await detectWalletType(
+      sender,
+      srcChainId,
+    );
 
     const res = await fetch(`${this.apiEndpoint}/quote/v2`, {
       method: "POST",
@@ -142,7 +145,7 @@ export class RelayAdapter extends BaseAdapter {
         user: sender,
         recipient,
         referrer: this.referrer,
-        explicitDeposit: !isEOA,
+        explicitDeposit: !isEOA || isEIP7702Delegated,
         slippageTolerance: Math.round(slippagePercent * 100),
       }),
     });

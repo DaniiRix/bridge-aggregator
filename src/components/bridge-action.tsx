@@ -5,14 +5,23 @@ import {
 } from "@rainbow-me/rainbowkit";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
-import { type Address, erc20Abi, parseUnits, zeroAddress } from "viem";
+import {
+  type Address,
+  encodeFunctionData,
+  erc20Abi,
+  type Hex,
+  parseUnits,
+  zeroAddress,
+} from "viem";
 import {
   useConnection,
+  useSendCallsSync,
   useSendTransaction,
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
+import { useEOA } from "@/hooks/use-eoa";
 import { useQuote } from "@/hooks/use-quote";
 import { bridgeAggregator } from "@/lib/aggregator";
 import { wagmiConfig } from "@/lib/config";
@@ -20,21 +29,92 @@ import { useBridge } from "@/store/bridge";
 import { toaster } from "./ui/toaster";
 
 export const BridgeAction = () => {
+  const queryClient = useQueryClient();
+
   const { address, chainId } = useConnection();
   const { openConnectModal } = useConnectModal();
   const addRecentTransaction = useAddRecentTransaction();
-
-  const queryClient = useQueryClient();
-
-  const { mutateAsync: switchChainAsync } = useSwitchChain();
-  const { mutateAsync: writeContract } = useWriteContract();
+  const switchChain = useSwitchChain();
+  const { mutateAsync: writeContract, isPending: isApproving } =
+    useWriteContract();
 
   const { selectedAdapter, from, to, toggleRoutes, reset } = useBridge(
     (state) => state,
   );
   const { data: quotes = [], isLoading: areQuotesLoading } = useQuote();
+  const {
+    data: { doesSupportAtomicBatch } = {
+      doesSupportAtomicBatch: false,
+    },
+  } = useEOA(from?.chain?.id);
 
-  const { data: allowance } = useQuery({
+  const { mutateAsync: sendCalls, isPending: isSendingCalls } =
+    useSendCallsSync({
+      mutation: {
+        onSuccess() {
+          queryClient.refetchQueries({ queryKey: ["token-balances"] });
+        },
+      },
+    });
+
+  const { mutateAsync: sendTransaction, isPending: isSending } =
+    useSendTransaction({
+      mutation: {
+        onSuccess() {
+          queryClient.refetchQueries({ queryKey: ["token-balances"] });
+        },
+      },
+    });
+
+  const isDisabled = useMemo(() => {
+    return (
+      !address ||
+      !from.chain ||
+      !from.token ||
+      !from.amount ||
+      !parseFloat(from.amount) ||
+      !to.chain ||
+      !to.token ||
+      !to.amount ||
+      isApproving ||
+      isSending ||
+      isSendingCalls
+    );
+  }, [address, from, to, isApproving, isSending, isSendingCalls]);
+
+  const approveToken = async () => {
+    const selectedQuote = quotes.find(
+      (q) => q.adapter.name === selectedAdapter,
+    );
+    if (
+      !from.token ||
+      !from.amount ||
+      !selectedQuote ||
+      !selectedQuote.tokenSpenderAddress
+    )
+      return;
+
+    const hash = await writeContract({
+      address: from.token.address as Address,
+      abi: erc20Abi,
+      functionName: "approve",
+      args: [
+        selectedQuote.tokenSpenderAddress as Address,
+        parseUnits(from.amount, from.token.decimals),
+      ],
+    });
+
+    await waitForTransactionReceipt(wagmiConfig, {
+      hash,
+    });
+
+    addRecentTransaction({
+      hash,
+      description: `Approved token for ${selectedQuote.adapter.name}`,
+    });
+  };
+
+  const { data: allowance, refetch: refetchAllowance } = useQuery({
     queryKey: [
       "allowance",
       selectedAdapter,
@@ -74,96 +154,22 @@ export const BridgeAction = () => {
     staleTime: 10_000,
   });
 
-  const { mutateAsync: approveTokenMutation, isPending: isApproving } =
-    useMutation({
-      mutationFn: async () => {
-        const selectedQuote = quotes.find(
-          (q) => q.adapter.name === selectedAdapter,
-        );
-
-        if (!from.token || !from.amount || !selectedQuote?.tokenSpenderAddress)
-          throw new Error("Invalid quote");
-
-        const hash = await writeContract({
-          address: from.token.address as Address,
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [
-            selectedQuote.tokenSpenderAddress as Address,
-            parseUnits(from.amount, from.token.decimals),
-          ],
-        });
-
-        await waitForTransactionReceipt(wagmiConfig, {
-          hash,
-        });
-
-        addRecentTransaction({
-          hash,
-          description: `Approved token for ${selectedQuote.adapter.name}`,
-        });
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: [
-            "allowance",
-            selectedAdapter,
-            from.token?.chainId,
-            from.token?.address,
-          ],
-        });
-      },
-      onError: () => {
-        toaster.create({
-          title: "Failed to approve token",
-          type: "error",
-        });
-      },
-    });
-
-  const { mutateAsync: sendBridgeTransaction, isPending: isSending } =
-    useSendTransaction({
-      mutation: {
-        onSuccess() {
-          queryClient.refetchQueries({ queryKey: ["token-balances"] });
-
-          toaster.create({
-            title: "Bridge successful",
-            type: "success",
-          });
-
-          reset();
-        },
-        onError() {
-          toaster.create({
-            title: "Failed to bridge",
-            type: "error",
-          });
-        },
-      },
-    });
-
-  const isDisabled = useMemo(() => {
-    return (
-      !address ||
-      !from.chain ||
-      !from.token ||
-      !from.amount ||
-      !parseFloat(from.amount) ||
-      !to.chain ||
-      !to.token ||
-      !to.amount ||
-      isApproving ||
-      isSending
-    );
-  }, [address, from, to, isApproving, isSending]);
+  const { mutateAsync: approveTokenMutation } = useMutation({
+    mutationFn: approveToken,
+    onMutate: () => {
+      queryClient.invalidateQueries({ queryKey: ["quotes"] });
+    },
+    onSuccess: () => {
+      refetchAllowance();
+    },
+  });
 
   const handleBridge = useCallback(async () => {
-    if (isDisabled) return;
+    if (isDisabled || !from.chain) return;
 
     if (chainId !== from.chain?.id) {
       try {
-        await switchChainAsync({ chainId: from.chain!.id });
+        await switchChain.mutateAsync({ chainId: from.chain.id });
       } catch {
         toaster.create({
           title: "Failed to switch chain",
@@ -176,39 +182,64 @@ export const BridgeAction = () => {
     const selectedQuote = quotes.find(
       (q) => q.adapter.name === selectedAdapter,
     );
-    if (!selectedQuote) {
-      toaster.create({
-        title: "Failed to bridge - no quote found",
-        type: "error",
-      });
-      return;
-    }
+    if (!selectedQuote || !from.token || !from.amount) return;
 
-    if (
+    const isApprovalNeeded =
       selectedQuote.tokenSpenderAddress &&
-      from.token!.address !== zeroAddress &&
+      from.token.address !== zeroAddress &&
       (!allowance ||
-        BigInt(allowance) < parseUnits(from.amount!, from.token!.decimals))
-    ) {
-      await approveTokenMutation();
+        BigInt(allowance) < parseUnits(from.amount, from.token.decimals));
+
+    let hex: Hex | undefined;
+    if (isApprovalNeeded && doesSupportAtomicBatch) {
+      const receipt = await sendCalls({
+        calls: [
+          {
+            to: from.token.address as Address,
+            data: encodeFunctionData({
+              abi: erc20Abi,
+              functionName: "approve",
+              args: [
+                selectedQuote.tokenSpenderAddress as Address,
+                parseUnits(from.amount, from.token.decimals),
+              ],
+            }),
+          },
+          selectedQuote.txRequest,
+        ],
+        chainId: from.chain?.id,
+      });
+      hex = receipt.receipts?.at(0)?.transactionHash;
+    } else {
+      if (isApprovalNeeded) {
+        await approveTokenMutation();
+      }
+
+      hex = await sendTransaction({
+        ...selectedQuote.txRequest,
+        chainId: from.chain?.id,
+      });
+
+      await Promise.all([
+        waitForTransactionReceipt(wagmiConfig, {
+          hash: hex,
+        }),
+        bridgeAggregator.postBridge(selectedQuote, hex),
+      ]);
     }
 
-    const hex = await sendBridgeTransaction({
-      ...selectedQuote.txRequest,
-      chainId: from.chain?.id,
-    });
-
-    await Promise.all([
-      waitForTransactionReceipt(wagmiConfig, {
+    if (hex)
+      addRecentTransaction({
         hash: hex,
-      }),
-      bridgeAggregator.postBridge(selectedQuote, hex),
-    ]);
+        description: `Bridged ${from.token?.symbol} to ${to.token?.symbol} via ${selectedAdapter}`,
+      });
 
-    addRecentTransaction({
-      hash: hex,
-      description: `Bridged ${from.token?.symbol} from ${from.chain?.name} to ${to.token?.symbol} on ${to.chain?.name} via ${selectedAdapter}`,
+    toaster.create({
+      title: `Bridged ${from.token?.symbol} to ${to.token?.symbol} via ${selectedAdapter}`,
+      type: "success",
     });
+
+    reset();
   }, [
     isDisabled,
     chainId,
@@ -217,10 +248,13 @@ export const BridgeAction = () => {
     to,
     selectedAdapter,
     allowance,
-    switchChainAsync,
+    switchChain,
+    doesSupportAtomicBatch,
+    sendCalls,
     addRecentTransaction,
     approveTokenMutation,
-    sendBridgeTransaction,
+    sendTransaction,
+    reset,
   ]);
 
   if (!address)
@@ -238,7 +272,7 @@ export const BridgeAction = () => {
       w="100%"
       disabled={isDisabled}
       onClick={selectedAdapter ? handleBridge : toggleRoutes}
-      loading={areQuotesLoading || isApproving || isSending}
+      loading={areQuotesLoading || isApproving || isSending || isSendingCalls}
       loadingText={areQuotesLoading ? "Fetching quotes" : "Bridging"}
     >
       {!selectedAdapter ? "Select Route" : "Bridge"}
